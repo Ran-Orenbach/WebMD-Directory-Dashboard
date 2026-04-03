@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebMD Directory — Revenue Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;--accent:#4f8ef7;--accent2:#34d399;--accent3:#f59e0b;--accent4:#f87171;--accent5:#a78bfa;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--positive:#34d399;--negative:#f87171}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  header h1{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+  header span{font-size:12px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+  nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:2px;padding:0 24px;overflow-x:auto}
+  nav button{background:none;border:none;color:var(--text2);font-size:13px;padding:12px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+  nav button:hover{color:var(--text)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  .page{display:none;padding:24px 28px;max-width:1400px;margin:0 auto}
+  .page.active{display:block}
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+  .kpi .label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .kpi .value{font-size:24px;font-weight:700;color:var(--text);line-height:1}
+  .kpi .sub{font-size:11px;color:var(--text3);margin-top:5px}
+  .kpi .delta{font-size:12px;font-weight:600;margin-top:4px}
+  .kpi .delta.up{color:var(--positive)}.kpi .delta.down{color:var(--negative)}
+  .grid{display:grid;gap:16px}
+  .grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr 1fr}.grid-2-1{grid-template-columns:2fr 1fr}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+  .card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+  .card-title span{font-size:11px;font-weight:400;color:var(--text3)}
+  .chart-wrap{position:relative}
+  .filter-bar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .filter-bar label{font-size:11px;color:var(--text3);margin-right:4px}
+  .filter-bar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--text3);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+  td{padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--surface2)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+  .badge-t1{background:rgba(167,139,250,.15);color:#a78bfa}
+  .badge-t2{background:rgba(79,142,247,.15);color:#4f8ef7}
+  .badge-t3{background:rgba(52,211,153,.15);color:#34d399}
+  .badge-t4{background:rgba(245,158,11,.15);color:#f59e0b}
+  .badge-ms{background:rgba(244,114,182,.15);color:#f472b6}
+  .cohort-table{overflow-x:auto}
+  .cohort-table table{font-size:11px}
+  .cohort-table td{padding:4px 6px;text-align:center;min-width:38px;border-radius:3px;font-size:10px;font-weight:600}
+  .cohort-table th{padding:4px 6px;text-align:center;font-size:10px}
+  .pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .pricing-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative}
+  .pricing-card.highlight{border-color:var(--accent)}
+  .pricing-card .tier-badge{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+  .pricing-card .tier-price{font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px}
+  .pricing-card .tier-price sup{font-size:14px;font-weight:400}
+  .pricing-card .tier-price sub{font-size:13px;font-weight:400;color:var(--text2)}
+  .pricing-card .tier-desc{font-size:12px;color:var(--text2);margin-bottom:12px}
+  .pricing-card ul{list-style:none}
+  .pricing-card ul li{font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:6px}
+  .pricing-card ul li:last-child{border-bottom:none}
+  .pricing-card ul li::before{content:'✓';color:var(--positive);font-size:11px;margin-top:1px}
+  .rec-badge{position:absolute;top:-10px;right:14px;background:var(--accent);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px}
+  .insight-box{background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:12px;font-size:12px;line-height:1.6;color:var(--text2)}
+  .insight-box strong{color:var(--text)}
+  .insight-box.warn{border-left-color:var(--accent4)}
+  .insight-box.ok{border-left-color:var(--positive)}
+  section-title{display:block;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+  @media(max-width:900px){.grid-2,.grid-3,.grid-2-1{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr 1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 WebMD Directory — Revenue Intelligence</h1>
+  <span>Data through Feb 2026</span>
+</header>
+<nav>
+  <button class="active" onclick="showPage('overview',this)">Overview</button>
+  <button onclick="showPage('mrr',this)">MRR Roll Forward</button>
+  <button onclick="showPage('cohorts',this)">Cohort Retention</button>
+  <button onclick="showPage('segments',this)">Segments & ARPC</button>
+  <button onclick="showPage('aops',this)">AOPs</button>
+  <button onclick="showPage('contacts',this)">Contacts & DPC</button>
+  <button onclick="showPage('pricing',this)">💡 Pricing Strategy</button>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="page active" id="page-overview">
+  <div class="kpi-row" id="kpis"></div>
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Monthly Recurring Revenue <span>EP + Telemed + RepMn, monthly billing</span></div>
+      <canvas id="chart-mrr-main" height="200"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">MRR Waterfall — Last 12 Months <span>New / Expansion / Contraction / Churn</span></div>
+      <canvas id="chart-waterfall-bar" height="200"></canvas>
+    </div>
+  </div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-title">Annual Total Churn Rate <span>(Cancels + Contraction) ÷ Starting MRR × 12</span></div>
+      <canvas id="chart-churn-line" height="180"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Active EP Profiles & Accounts <span>Monthly billing only</span></div>
+      <canvas id="chart-accounts" height="180"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Rev per Profile & per Account (EP) <span>Monthly billing</span></div>
+      <canvas id="chart-arpc" height="180"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- MRR -->
+<div class="page" id="page-mrr">
+  <div class="kpi-row" id="mrr-kpis"></div>
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Full MRR Waterfall <span>All months</span></div>
+      <canvas id="chart-wf-stacked" height="260"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue by Product <span>Monthly billing</span></div>
+      <canvas id="chart-by-product" height="260"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">MRR Roll Forward Detail</div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Month</th><th>Starting MRR</th><th>New MRR</th><th>Expansion</th><th>Contraction</th><th>Churned</th><th>Ending MRR</th><th>Net Δ</th><th>Annual Total Churn %</th></tr></thead>
+      <tbody id="mrr-table-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- COHORTS -->
+<div class="page" id="page-cohorts">
+  <div class="filter-bar">
+    <label>Show cohorts from:</label>
+    <select id="cohort-from" onchange="renderCohorts()">
+      <option value="all">All cohorts</option>
+      <option value="2023">2023</option>
+      <option value="2024" selected>2024+</option>
+      <option value="2025">2025+</option>
+    </select>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Cohort Revenue Retention Heatmap <span>% of initial cohort MRR remaining at Month N</span></div>
+    <div class="cohort-table" id="cohort-heatmap"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Average Retention Curve <span>Across selected cohorts</span></div>
+    <canvas id="chart-retention-avg" height="200"></canvas>
+  </div>
+</div>
+
+<!-- SEGMENTS -->
+<div class="page" id="page-segments">
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Revenue by AOP Tier <span>EP monthly</span></div>
+      <canvas id="chart-by-tier" height="240"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue by ARPC Range <span>EP monthly — new dimension</span></div>
+      <canvas id="chart-by-range" height="240"></canvas>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Enterprise vs Non-Enterprise <span>EP monthly revenue</span></div>
+      <canvas id="chart-by-type" height="220"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue by Tier — Feb 2026 <span>EP monthly active, profiles & accounts</span></div>
+      <div class="table-wrap" style="margin-top:8px">
+        <table><thead><tr><th>Tier</th><th>Profiles</th><th>Accounts</th><th>Revenue</th><th>$/Profile</th><th>$/Account</th><th>Share</th></tr></thead>
+        <tbody id="tier-table-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">ARPC by Price Range — Feb 2026 <span>Note: $0-$75 label = accounts with highest individual plan prices; range reflects billing tier not actual ARPC</span></div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ARPC Range</th><th>Profiles</th><th>Accounts</th><th>Revenue</th><th>$/Profile</th><th>Share</th></tr></thead>
+      <tbody id="range-table-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- AOPs -->
+<div class="page" id="page-aops">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Top 15 AOPs by 6M Revenue <span>EP monthly, last 6 months</span></div>
+    <canvas id="chart-aops" height="340"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title">Full AOP Table <span>Top 25 by revenue</span></div>
+    <div class="table-wrap">
+      <table><thead><tr><th>#</th><th>Area of Practice</th><th>6M Revenue</th><th>Profiles</th><th>Accounts</th><th>$/Profile/Mo</th></tr></thead>
+      <tbody id="aop-table-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+
+<!-- CONTACTS -->
+<div class="page" id="page-contacts">
+  <div class="kpi-row" id="contacts-kpis"></div>
+
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Monthly Contacts & Dollar per Contact (DPC) <span>EP monthly billing — Feb 2026 data pending</span></div>
+      <canvas id="chart-contacts-ts" height="220"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Contacts per Profile Trend <span>vs Annual Total Churn Rate</span></div>
+      <canvas id="chart-cpp-churn" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Scatter: Contacts/Profile vs Annual Total Churn <span>Each point = 1 month (Jan 2023 – Jan 2026)</span></div>
+      <canvas id="chart-scatter" height="260"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Dollar per Contact (DPC) by Segment <span>Jan 2026 — EP monthly active</span></div>
+      <canvas id="chart-dpc-seg" height="260"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">DPC by AOP <span>Top 20 AOPs by revenue — Jan 2026</span></div>
+      <canvas id="chart-dpc-aop" height="320"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Contacts & DPC by Segment — Jan 2026 <span>Non-Enterprise drives 100% of tracked contacts</span></div>
+      <div class="table-wrap" style="margin-top:8px">
+        <table>
+          <thead><tr><th>Segment</th><th>Contacts</th><th>Profiles</th><th>Contacts/Profile</th><th>Revenue</th><th>DPC ($)</th></tr></thead>
+          <tbody id="contacts-seg-table"></tbody>
+        </table>
+      </div>
+      <div class="insight-box warn" style="margin-top:14px">
+        <strong>⚠️ Enterprise Contact Data Missing — Confirmed:</strong> All 45 Enterprise accounts show exactly zero contacts across all 38 months of data. This is a systematic gap — not a monthly anomaly. Enterprise generates $178K/month (28% of EP revenue) but contributes 0 tracked contacts. The AOP demand classification and DPC analysis in the Pricing tab excludes Enterprise entirely and uses Non-Enterprise data only. Resolve tracking before any Enterprise-specific pricing or ROI conversations.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Key Contacts Findings</div>
+    <div class="grid grid-3" style="margin-top:4px">
+      <div class="insight-box warn">
+        <strong>Contacts declining sharply:</strong> Peak of ~30K/month in mid-2024 dropped to ~16K by Jun-Jul 2025 — a 45% decline. Even though revenue held up, this is a leading indicator of future churn risk. Physicians evaluate ROI by lead flow; fewer contacts = higher cancel probability.
+      </div>
+      <div class="insight-box">
+        <strong>Correlation: contacts/profile vs annual churn = +0.40:</strong> Counterintuitively, months with MORE contacts/profile correlate with HIGHER churn. This likely reflects early-tenure accounts (many contacts, still learning the platform) canceling at higher rates. Mature, retained accounts have fewer but more valuable contacts.
+      </div>
+      <div class="insight-box ok">
+        <strong>DPC rising is a double-edged signal:</strong> DPC has climbed from ~$19–22 in 2023–2024 to $32–45 in 2025. This means each contact is "worth" more — but it's driven by fewer contacts, not higher revenue. The $150–$300 ARPC range drives the most contacts (8.9/profile) and lowest DPC ($20.70), suggesting volume = efficiency.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="page" id="page-pricing">
+  <div style="margin-bottom:20px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:6px">💡 Per-Profile Pricing — Volume × AOP Demand Matrix</div>
+    <div style="font-size:12px;color:var(--text2)">Price per profile per month based on two axes: (1) how many profiles the account brings, (2) how much contact demand the AOP generates. Volume drives the base rate down; AOP demand adjusts it up or down by 20%.</div>
+  </div>
+
+  <div class="insight-box warn" style="margin-bottom:16px">
+    <strong>⚠️ Policy &amp; Data Note:</strong> New pricing applies to all new logos immediately. For existing accounts, rates only go <em>up</em> — 28 accounts already above target are held and reviewed at renewal.<br><br><strong>AOP demand classification uses Non-Enterprise accounts only.</strong> All 45 Enterprise accounts show zero contacts across all 38 months of data — their contact data is either tracked separately or not flowing into this dataset. Including them artificially suppresses CPP for 8 AOPs. Classification is based on Non-Enterprise CPP and $/profile only, which is the accurate signal.
+  </div>
+
+  <!-- PRICING MATRIX TABLE -->
+  <div style="margin-bottom:20px">
+    <section-title>THE 2D PRICING MATRIX — $/PROFILE/MO</section-title>
+    <div class="card">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
+        <span style="display:inline-block;width:12px;height:12px;background:rgba(52,211,153,0.3);border-radius:2px;margin-right:4px"></span>High demand (CPP ≥5 AND $/prof ≥$150) &nbsp;&nbsp;
+        <span style="display:inline-block;width:12px;height:12px;background:rgba(79,142,247,0.2);border-radius:2px;margin-right:4px"></span>Standard demand &nbsp;&nbsp;
+        <span style="display:inline-block;width:12px;height:12px;background:rgba(100,116,139,0.2);border-radius:2px;margin-right:4px"></span>Low demand &nbsp;&nbsp;
+        <span style="color:var(--text3)">Bold = target rate · italic gray = accounts already above target (hold)</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Volume Bracket</th><th>Accts</th><th>Profiles</th>
+              <th style="background:rgba(52,211,153,0.1);color:#34d399">High Demand AOP<br><span style="font-weight:400;font-size:10px">+20% premium</span></th>
+              <th style="background:rgba(79,142,247,0.1);color:#4f8ef7">Standard Demand AOP<br><span style="font-weight:400;font-size:10px">base rate</span></th>
+              <th style="background:rgba(100,116,139,0.1);color:#64748b">Low Demand AOP<br><span style="font-weight:400;font-size:10px">−20% discount</span></th>
+              <th>MRR Uplift</th>
+            </tr>
+          </thead>
+          <tbody id="pricing-matrix-tbody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3)">
+        ↑ = raise to target &nbsp;|&nbsp; HOLD = already above target, grandfather at renewal &nbsp;|&nbsp; Annual pre-pay: 17% off all rates
+      </div>
+    </div>
+  </div>
+
+  <!-- AOP CLASSIFICATION -->
+  <div style="margin-bottom:20px">
+    <section-title>AOP DEMAND CLASSIFICATION <span style="font-size:10px;font-weight:400;color:var(--accent3)">Non-Enterprise only — Enterprise contacts missing from data</span></section-title>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-title" style="color:#34d399">▲ High Demand <span>CPP ≥5 AND $/profile ≥$150</span></div>
+        <div style="font-size:11px;line-height:1.9;color:var(--text2)" id="aop-high-list"></div>
+        <div class="insight-box ok" style="margin-top:10px;font-size:11px">High contact volume <em>and</em> strong revenue per profile. These AOPs justify premium pricing on both axes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:#4f8ef7">● Standard Demand <span>CPP ≥5 OR $/profile ≥$150</span></div>
+        <div style="font-size:11px;line-height:1.9;color:var(--text2)" id="aop-std-list"></div>
+        <div class="insight-box" style="margin-top:10px;font-size:11px">Strong on one dimension. Qualify for base rate — neither premium nor discounted.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:#64748b">▼ Low Demand <span>CPP &lt;5 AND $/profile &lt;$150</span></div>
+        <div style="font-size:11px;line-height:1.9;color:var(--text2)" id="aop-low-list"></div>
+        <div class="insight-box warn" style="margin-top:10px;font-size:11px">Lower contact volume and lower revenue per profile. Discounted rate reduces churn risk for these lower-ROI segments.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOLUME LADDER VISUAL -->
+  <div style="margin-bottom:20px">
+    <section-title>BASE RATE VOLUME LADDER</section-title>
+    <div class="card">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Base rate before AOP adjustment. Each bracket shows 3 prices: Low / Standard / High demand.</div>
+      <canvas id="chart-pricing-ladder" height="160"></canvas>
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-size:11px">
+        <div class="insight-box" style="margin:0"><strong>Solo (1 profile):</strong><br>$160 / $199 / $240 per profile/mo<br>1,527 accounts · 84.6% of base</div>
+        <div class="insight-box" style="margin:0"><strong>Group (3–5):</strong><br>$135 / $169 / $205 per profile/mo<br>76 accounts · adding profiles drops rate</div>
+        <div class="insight-box" style="margin:0"><strong>Enterprise (51–200):</strong><br>$65 / $79 / $95 per profile/mo<br>10 accounts · annual contract required</div>
+        <div class="insight-box" style="margin:0"><strong>Strategic (201+):</strong><br>$45 / $55 / $65 per profile/mo<br>3 accounts (DearDoc 940, Talkiatry 400, Methodist 253)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVENUE IMPACT -->
+  <div style="margin-bottom:20px">
+    <section-title>REVENUE IMPACT — RAISE-ONLY POLICY</section-title>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Segment</th><th>Accts to Raise</th><th>Profiles</th>
+            <th>Current MRR</th><th>Target MRR</th><th>Gross Uplift</th><th>Realistic (70%)</th>
+          </tr></thead>
+          <tbody id="impact-tbody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3)">
+        Raise-only: 764 accounts already above target are excluded (HOLD). Realistic = 70% adoption accounting for churn from price increase and grandfathering. Does not include RepMn/Telemed add-on revenue.
+      </div>
+    </div>
+  </div>
+
+  <!-- ROLLOUT -->
+  <div style="margin-bottom:20px">
+    <section-title>ROLLOUT PLAN</section-title>
+    <div class="grid grid-2">
+      <div>
+        <div class="insight-box warn"><strong>Phase 1 — New Logos (Month 1):</strong> Launch 2D pricing immediately for all new accounts. Sales team quotes per-profile rate based on AOP + expected profile count. First month free on one profile as trial instead of flat account discount.</div>
+        <div class="insight-box"><strong>Phase 2 — Strategic Accounts (Months 2–3):</strong> DearDoc (940 profiles, $25→$55/prof = +$28K/mo), Talkiatry (400 profiles), Houston Methodist (253 profiles). Approach as renegotiation with enhanced services. Secure annual contracts first, then raise on renewal.</div>
+        <div class="insight-box"><strong>Phase 3 — Enterprise 51–200 (Months 3–4):</strong> 7 accounts currently below target ($54/prof → $65/prof, +$6.6K/mo). These are underpriced Low-demand AOPs. Annual contract + modest raise.</div>
+      </div>
+      <div>
+        <div class="insight-box ok"><strong>Phase 4 — Solo High-Demand (Months 4–6):</strong> 412 accounts at $197→$240/prof (+$17.7K/mo). These are single-physician high-contact AOPs (Dermatology, Psychology, Cardiology etc). Highest ROI per account to contact. 90-day notice, annual lock offer.</div>
+        <div class="insight-box"><strong>Phase 5 — Broad Base (Months 6–12):</strong> Remaining Solo Standard ($189→$200, +$5.6K) and all Small/Group increases. 90-day notice. Month 5 save program: offer annual at current rate before the new rate kicks in.</div>
+        <div class="insight-box"><strong>Volume Upsell as Retention Tool:</strong> Adding a 2nd profile drops rate from $199→$185 for High-demand AOPs. Frame every renewal conversation as: "Add another physician and your per-profile cost drops." Growth reduces churn risk and increases account stickiness.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+const PM = {"matrix":[{"bracket":"Solo (1)","demand":"High","accts":838,"profiles":838,"cur_arpc_p":192,"new_price":240,"cur_rev":160813.0,"new_rev":201120,"uplift":40307.0},{"bracket":"Solo (1)","demand":"Standard","accts":517,"profiles":517,"cur_arpc_p":178,"new_price":200,"cur_rev":91989.0,"new_rev":103400,"uplift":11411.0},{"bracket":"Solo (1)","demand":"Low","accts":172,"profiles":172,"cur_arpc_p":141,"new_price":160,"cur_rev":24255.0,"new_rev":27520,"uplift":3265.0},{"bracket":"Small (2)","demand":"High","accts":62,"profiles":124,"cur_arpc_p":191,"new_price":220,"cur_rev":23625.0,"new_rev":27280,"uplift":3655.0},{"bracket":"Small (2)","demand":"Standard","accts":25,"profiles":50,"cur_arpc_p":174,"new_price":185,"cur_rev":8695.0,"new_rev":9250,"uplift":555.0},{"bracket":"Small (2)","demand":"Low","accts":12,"profiles":24,"cur_arpc_p":127,"new_price":150,"cur_rev":3040.0,"new_rev":3600,"uplift":560.0},{"bracket":"Group (3\u20135)","demand":"High","accts":42,"profiles":153,"cur_arpc_p":168,"new_price":205,"cur_rev":25633.0,"new_rev":31365,"uplift":5732.0},{"bracket":"Group (3\u20135)","demand":"Standard","accts":28,"profiles":103,"cur_arpc_p":162,"new_price":170,"cur_rev":16671.0,"new_rev":17510,"uplift":839.0},{"bracket":"Group (3\u20135)","demand":"Low","accts":6,"profiles":24,"cur_arpc_p":128,"new_price":135,"cur_rev":3069.0,"new_rev":3240,"uplift":171.0},{"bracket":"Mid (6\u201310)","demand":"High","accts":24,"profiles":175,"cur_arpc_p":149,"new_price":165,"cur_rev":26032.0,"new_rev":28875,"uplift":2843.0},{"bracket":"Mid (6\u201310)","demand":"Standard","accts":10,"profiles":84,"cur_arpc_p":109,"new_price":140,"cur_rev":9147.0,"new_rev":11760,"uplift":2613.0},{"bracket":"Mid (6\u201310)","demand":"Low","accts":8,"profiles":67,"cur_arpc_p":125,"new_price":110,"cur_rev":8376.0,"new_rev":7370,"uplift":-1006.0},{"bracket":"Large (11\u201325)","demand":"High","accts":21,"profiles":360,"cur_arpc_p":125,"new_price":145,"cur_rev":45073.0,"new_rev":52200,"uplift":7127.0},{"bracket":"Large (11\u201325)","demand":"Standard","accts":11,"profiles":172,"cur_arpc_p":128,"new_price":120,"cur_rev":22047.0,"new_rev":20640,"uplift":-1407.0},{"bracket":"Large (11\u201325)","demand":"Low","accts":5,"profiles":90,"cur_arpc_p":80,"new_price":95,"cur_rev":7239.0,"new_rev":8550,"uplift":1311.0},{"bracket":"Regional (26\u201350)","demand":"High","accts":1,"profiles":26,"cur_arpc_p":125,"new_price":120,"cur_rev":3250.0,"new_rev":3120,"uplift":-130.0},{"bracket":"Regional (26\u201350)","demand":"Standard","accts":8,"profiles":296,"cur_arpc_p":97,"new_price":100,"cur_rev":28760.0,"new_rev":29600,"uplift":840.0},{"bracket":"Regional (26\u201350)","demand":"Low","accts":2,"profiles":71,"cur_arpc_p":85,"new_price":80,"cur_rev":6015.0,"new_rev":5680,"uplift":-335.0},{"bracket":"Enterprise (51\u2013200)","demand":"High","accts":3,"profiles":272,"cur_arpc_p":73,"new_price":95,"cur_rev":19839.0,"new_rev":25840,"uplift":6001.0},{"bracket":"Enterprise (51\u2013200)","demand":"Standard","accts":5,"profiles":344,"cur_arpc_p":88,"new_price":80,"cur_rev":30180.0,"new_rev":27520,"uplift":-2660.0},{"bracket":"Enterprise (51\u2013200)","demand":"Low","accts":2,"profiles":229,"cur_arpc_p":23,"new_price":65,"cur_rev":5322.0,"new_rev":14885,"uplift":9563.0},{"bracket":"Strategic (201+)","demand":"High","accts":1,"profiles":253,"cur_arpc_p":89,"new_price":65,"cur_rev":22443.0,"new_rev":16445,"uplift":-5998.0},{"bracket":"Strategic (201+)","demand":"Standard","accts":2,"profiles":1340,"cur_arpc_p":32,"new_price":55,"cur_rev":43500.0,"new_rev":73700,"uplift":30200.0}],"base":{"Solo (1)":199,"Small (2)":185,"Group (3\u20135)":169,"Mid (6\u201310)":139,"Large (11\u201325)":119,"Regional (26\u201350)":99,"Enterprise (51\u2013200)":79,"Strategic (201+)":55},"aop_high":["Allergy and Immunology","Bariatric/Weight Loss","Cardiology","Cardiovascular Disease","Dermatology","Emergency Medicine","Endocrinology","Endocrinology, Diabetes and Metabolism","Family Medicine/Internal Medicine","Holistic Medicine","Neurological Surgery","Neurology","OB/GYN","Orthopaedic Surgery","Otolaryngology","Pain Management","Pediatrics","Plastic Surgery","Podiatry","Preventative Medicine","Primary Care","Psychology","Pulmonary Disease","Regenerative Medicine","Rheumatology","Sleep Medicine","Sports Medicine","Urology","Women's Health"],"aop_standard":["Acupuncture","Addiction Medicine","Bariatric Surgeon","Gastroenterology","General Surgery","Nephrology","Oncology","Physical Medicine and Rehabilitation","Psychiatry","Radiology","Therapy","Vascular Surgery"],"aop_low":["Audiology","Chiropractor","Functional Medicine","General Dentistry","Nutritionist/Dietician","Ophthalmology","Optometry"],"aop_stats":{"Ophthalmology":{"demand":"Low","arpc_p_6m":149.9,"cpp_6m":4.19,"accts":32},"Therapy":{"demand":"Standard","arpc_p_6m":154.2,"cpp_6m":3.94,"accts":32},"General Dentistry":{"demand":"Low","arpc_p_6m":142.5,"cpp_6m":3.17,"accts":53},"Addiction Medicine":{"demand":"Standard","arpc_p_6m":201.7,"cpp_6m":1.26,"accts":25},"Cardiovascular Disease":{"demand":"High","arpc_p_6m":259.2,"cpp_6m":6.71,"accts":10},"Family Medicine/Internal Medicine":{"demand":"High","arpc_p_6m":177.1,"cpp_6m":10.02,"accts":254},"Plastic Surgery":{"demand":"High","arpc_p_6m":255.6,"cpp_6m":14.12,"accts":55},"Pain Management":{"demand":"High","arpc_p_6m":172.4,"cpp_6m":5.01,"accts":46},"Cardiology":{"demand":"High","arpc_p_6m":191.8,"cpp_6m":6.3,"accts":19},"Psychiatry":{"demand":"Standard","arpc_p_6m":162.2,"cpp_6m":4.7,"accts":393},"Orthopaedic Surgery":{"demand":"High","arpc_p_6m":175.0,"cpp_6m":6.16,"accts":98},"Dermatology":{"demand":"High","arpc_p_6m":167.4,"cpp_6m":15.48,"accts":63},"Primary Care":{"demand":"High","arpc_p_6m":166.6,"cpp_6m":9.87,"accts":90},"Psychology":{"demand":"High","arpc_p_6m":167.4,"cpp_6m":12.18,"accts":72},"Chiropractor":{"demand":"Low","arpc_p_6m":109.6,"cpp_6m":4.61,"accts":73},"Rheumatology":{"demand":"High","arpc_p_6m":203.8,"cpp_6m":13.3,"accts":6},"Neurology":{"demand":"High","arpc_p_6m":196.7,"cpp_6m":39.79,"accts":35},"OB/GYN":{"demand":"High","arpc_p_6m":179.6,"cpp_6m":8.74,"accts":47},"Podiatry":{"demand":"High","arpc_p_6m":169.4,"cpp_6m":7.88,"accts":52},"Allergy and Immunology":{"demand":"High","arpc_p_6m":198.4,"cpp_6m":6.49,"accts":11},"Vascular Surgery":{"demand":"Standard","arpc_p_6m":259.3,"cpp_6m":4.04,"accts":19},"Endocrinology, Diabetes and Metabolism":{"demand":"High","arpc_p_6m":173.2,"cpp_6m":40.06,"accts":6},"Optometry":{"demand":"Low","arpc_p_6m":146.9,"cpp_6m":3.02,"accts":15},"Pediatrics":{"demand":"High","arpc_p_6m":181.9,"cpp_6m":6.99,"accts":10},"Gastroenterology":{"demand":"Standard","arpc_p_6m":129.2,"cpp_6m":12.17,"accts":14},"Pulmonary Disease":{"demand":"High","arpc_p_6m":177.3,"cpp_6m":13.81,"accts":7},"Otolaryngology":{"demand":"High","arpc_p_6m":164.0,"cpp_6m":6.95,"accts":16},"General Surgery":{"demand":"Standard","arpc_p_6m":237.1,"cpp_6m":2.51,"accts":13},"Oncology":{"demand":"Standard","arpc_p_6m":166.8,"cpp_6m":3.04,"accts":6},"Neurological Surgery":{"demand":"High","arpc_p_6m":179.0,"cpp_6m":6.08,"accts":16},"Physical Medicine and Rehabilitation":{"demand":"Standard","arpc_p_6m":169.0,"cpp_6m":2.65,"accts":15},"Urology":{"demand":"High","arpc_p_6m":218.9,"cpp_6m":10.55,"accts":6},"Radiology":{"demand":"Standard","arpc_p_6m":193.3,"cpp_6m":2.02,"accts":5},"Sleep Medicine":{"demand":"High","arpc_p_6m":213.9,"cpp_6m":8.08,"accts":6},"Women's Health":{"demand":"High","arpc_p_6m":198.3,"cpp_6m":11.06,"accts":6},"Sports Medicine":{"demand":"High","arpc_p_6m":192.6,"cpp_6m":5.77,"accts":8},"Functional Medicine":{"demand":"Low","arpc_p_6m":118.5,"cpp_6m":1.63,"accts":15},"Nephrology":{"demand":"Standard","arpc_p_6m":155.6,"cpp_6m":4.58,"accts":9},"Holistic Medicine":{"demand":"High","arpc_p_6m":187.6,"cpp_6m":7.23,"accts":7},"Audiology":{"demand":"Low","arpc_p_6m":134.3,"cpp_6m":1.61,"accts":5},"Bariatric/Weight Loss":{"demand":"High","arpc_p_6m":208.9,"cpp_6m":6.03,"accts":9},"Acupuncture":{"demand":"Standard","arpc_p_6m":129.9,"cpp_6m":5.21,"accts":27},"Emergency Medicine":{"demand":"High","arpc_p_6m":201.4,"cpp_6m":12.74,"accts":4},"Nutritionist/Dietician":{"demand":"Low","arpc_p_6m":124.1,"cpp_6m":4.87,"accts":10},"Bariatric Surgeon":{"demand":"Standard","arpc_p_6m":216.7,"cpp_6m":2.97,"accts":6},"Endocrinology":{"demand":"High","arpc_p_6m":195.3,"cpp_6m":14.42,"accts":7},"Preventative Medicine":{"demand":"High","arpc_p_6m":197.7,"cpp_6m":7.87,"accts":3},"Regenerative Medicine":{"demand":"High","arpc_p_6m":166.7,"cpp_6m":5.2,"accts":4}}};
+const D = {"mrr_timeseries":[{"month":"2022-12","mrr":433389.0},{"month":"2023-01","mrr":422872.0},{"month":"2023-02","mrr":429515.0},{"month":"2023-03","mrr":423704.0},{"month":"2023-04","mrr":431564.0},{"month":"2023-05","mrr":438350.0},{"month":"2023-06","mrr":453074.0},{"month":"2023-07","mrr":463360.0},{"month":"2023-08","mrr":471504.0},{"month":"2023-09","mrr":487198.0},{"month":"2023-10","mrr":518271.0},{"month":"2023-11","mrr":531975.0},{"month":"2023-12","mrr":540671.0},{"month":"2024-01","mrr":566692.0},{"month":"2024-02","mrr":584469.0},{"month":"2024-03","mrr":580807.0},{"month":"2024-04","mrr":579602.0},{"month":"2024-05","mrr":571491.0},{"month":"2024-06","mrr":601761.0},{"month":"2024-07","mrr":612593.0},{"month":"2024-08","mrr":621012.0},{"month":"2024-09","mrr":652774.0},{"month":"2024-10","mrr":669612.0},{"month":"2024-11","mrr":687150.0},{"month":"2024-12","mrr":695559.0},{"month":"2025-01","mrr":715086.0},{"month":"2025-02","mrr":725327.0},{"month":"2025-03","mrr":702869.0},{"month":"2025-04","mrr":711582.0},{"month":"2025-05","mrr":730507.0},{"month":"2025-06","mrr":733931.0},{"month":"2025-07","mrr":756631.0},{"month":"2025-08","mrr":758326.0},{"month":"2025-09","mrr":749985.0},{"month":"2025-10","mrr":760607.0},{"month":"2025-11","mrr":722407.0},{"month":"2025-12","mrr":731931.0},{"month":"2026-01","mrr":762733.0},{"month":"2026-02","mrr":694313.0}],"waterfall":[{"month":"2022-12","starting_mrr":0,"new_mrr":0,"expansion":0,"contraction":0,"churned":0,"ending_mrr":433389.0},{"month":"2023-01","starting_mrr":433389.0,"new_mrr":23728.0,"expansion":6326.0,"contraction":-22311.0,"churned":-19920.0,"ending_mrr":422872.0},{"month":"2023-02","starting_mrr":422872.0,"new_mrr":26639.0,"expansion":13597.0,"contraction":-3077.0,"churned":-30517.0,"ending_mrr":429515.0},{"month":"2023-03","starting_mrr":429515.0,"new_mrr":35407.0,"expansion":3413.0,"contraction":-7570.0,"churned":-37061.0,"ending_mrr":423704.0},{"month":"2023-04","starting_mrr":423704.0,"new_mrr":30755.0,"expansion":3528.0,"contraction":-6396.0,"churned":-20027.0,"ending_mrr":431564.0},{"month":"2023-05","starting_mrr":431564.0,"new_mrr":41565.0,"expansion":6133.0,"contraction":-5938.0,"churned":-34973.0,"ending_mrr":438350.0},{"month":"2023-06","starting_mrr":438350.0,"new_mrr":36619.0,"expansion":14373.0,"contraction":-8469.0,"churned":-27799.0,"ending_mrr":453074.0},{"month":"2023-07","starting_mrr":453074.0,"new_mrr":30560.0,"expansion":12513.0,"contraction":-10550.0,"churned":-22237.0,"ending_mrr":463360.0},{"month":"2023-08","starting_mrr":463360.0,"new_mrr":39997.0,"expansion":4728.0,"contraction":-18546.0,"churned":-18035.0,"ending_mrr":471504.0},{"month":"2023-09","starting_mrr":471504.0,"new_mrr":32188.0,"expansion":13055.0,"contraction":-8301.0,"churned":-21248.0,"ending_mrr":487198.0},{"month":"2023-10","starting_mrr":487198.0,"new_mrr":42598.0,"expansion":7765.0,"contraction":-3469.0,"churned":-15821.0,"ending_mrr":518271.0},{"month":"2023-11","starting_mrr":518271.0,"new_mrr":36560.0,"expansion":9397.0,"contraction":-1558.0,"churned":-30696.0,"ending_mrr":531975.0},{"month":"2023-12","starting_mrr":531975.0,"new_mrr":25108.0,"expansion":5710.0,"contraction":-1342.0,"churned":-20779.0,"ending_mrr":540671.0},{"month":"2024-01","starting_mrr":540671.0,"new_mrr":29974.0,"expansion":20379.0,"contraction":-4112.0,"churned":-20176.0,"ending_mrr":566736.0},{"month":"2024-02","starting_mrr":566736.0,"new_mrr":37861.0,"expansion":8751.0,"contraction":-5449.0,"churned":-23449.0,"ending_mrr":584493.0},{"month":"2024-03","starting_mrr":584493.0,"new_mrr":25094.0,"expansion":3237.0,"contraction":-5934.0,"churned":-26059.0,"ending_mrr":580831.0},{"month":"2024-04","starting_mrr":580831.0,"new_mrr":31049.0,"expansion":2153.0,"contraction":-10706.0,"churned":-23701.0,"ending_mrr":579626.0},{"month":"2024-05","starting_mrr":579626.0,"new_mrr":28213.0,"expansion":11028.0,"contraction":-4934.0,"churned":-42418.0,"ending_mrr":571515.0},{"month":"2024-06","starting_mrr":571515.0,"new_mrr":39052.0,"expansion":14160.0,"contraction":-4104.0,"churned":-18838.0,"ending_mrr":601785.0},{"month":"2024-07","starting_mrr":601785.0,"new_mrr":34645.0,"expansion":3125.0,"contraction":-2954.0,"churned":-23985.0,"ending_mrr":612617.0},{"month":"2024-08","starting_mrr":612617.0,"new_mrr":42079.0,"expansion":5577.0,"contraction":-2828.0,"churned":-36408.0,"ending_mrr":621036.0},{"month":"2024-09","starting_mrr":621036.0,"new_mrr":48132.0,"expansion":5167.0,"contraction":-3535.0,"churned":-18002.0,"ending_mrr":652798.0},{"month":"2024-10","starting_mrr":652798.0,"new_mrr":36165.0,"expansion":3844.0,"contraction":-7442.0,"churned":-15719.0,"ending_mrr":669646.0},{"month":"2024-11","starting_mrr":669646.0,"new_mrr":32493.0,"expansion":5562.0,"contraction":-949.0,"churned":-19578.0,"ending_mrr":687184.0},{"month":"2024-12","starting_mrr":687184.0,"new_mrr":25175.0,"expansion":8988.0,"contraction":-5048.0,"churned":-20707.0,"ending_mrr":695593.0},{"month":"2025-01","starting_mrr":695593.0,"new_mrr":38001.0,"expansion":5077.0,"contraction":-2604.0,"churned":-20946.0,"ending_mrr":715120.0},{"month":"2025-02","starting_mrr":715120.0,"new_mrr":30371.0,"expansion":13389.0,"contraction":-6547.0,"churned":-26972.0,"ending_mrr":725361.0},{"month":"2025-03","starting_mrr":725361.0,"new_mrr":37954.0,"expansion":10068.0,"contraction":-50102.0,"churned":-20379.0,"ending_mrr":702903.0},{"month":"2025-04","starting_mrr":702903.0,"new_mrr":53280.0,"expansion":3634.0,"contraction":-18158.0,"churned":-30043.0,"ending_mrr":711616.0},{"month":"2025-05","starting_mrr":711616.0,"new_mrr":36016.0,"expansion":18225.0,"contraction":-6012.0,"churned":-29304.0,"ending_mrr":730541.0},{"month":"2025-06","starting_mrr":730541.0,"new_mrr":32670.0,"expansion":2569.0,"contraction":-4387.0,"churned":-27427.0,"ending_mrr":733965.0},{"month":"2025-07","starting_mrr":733965.0,"new_mrr":40935.0,"expansion":5663.0,"contraction":-3410.0,"churned":-20664.0,"ending_mrr":756665.0},{"month":"2025-08","starting_mrr":756665.0,"new_mrr":35862.0,"expansion":7501.0,"contraction":-3721.0,"churned":-37947.0,"ending_mrr":758360.0},{"month":"2025-09","starting_mrr":758360.0,"new_mrr":32774.0,"expansion":4308.0,"contraction":-3016.0,"churned":-42407.0,"ending_mrr":750019.0},{"month":"2025-10","starting_mrr":750019.0,"new_mrr":32119.0,"expansion":7440.0,"contraction":-2254.0,"churned":-26683.0,"ending_mrr":760641.0},{"month":"2025-11","starting_mrr":760641.0,"new_mrr":27289.0,"expansion":7113.0,"contraction":-3554.0,"churned":-69049.0,"ending_mrr":722441.0},{"month":"2025-12","starting_mrr":722441.0,"new_mrr":37840.0,"expansion":6065.0,"contraction":-4209.0,"churned":-30397.0,"ending_mrr":731965.0},{"month":"2026-01","starting_mrr":731965.0,"new_mrr":62175.0,"expansion":1634.0,"contraction":-7847.0,"churned":-25161.0,"ending_mrr":762767.0},{"month":"2026-02","starting_mrr":762767.0,"new_mrr":38257.0,"expansion":1725.0,"contraction":-40434.0,"churned":-67968.0,"ending_mrr":694347.0}],"revenue_by_product":{"EP":[{"month":"2022-12","revenue":380918.0},{"month":"2023-01","revenue":372096.0},{"month":"2023-02","revenue":379517.0},{"month":"2023-03","revenue":378732.0},{"month":"2023-04","revenue":387081.0},{"month":"2023-05","revenue":394649.0},{"month":"2023-06","revenue":414927.0},{"month":"2023-07","revenue":423691.0},{"month":"2023-08","revenue":431518.0},{"month":"2023-09","revenue":448494.0},{"month":"2023-10","revenue":478775.0},{"month":"2023-11","revenue":493989.0},{"month":"2023-12","revenue":503463.0},{"month":"2024-01","revenue":529320.0},{"month":"2024-02","revenue":549002.0},{"month":"2024-03","revenue":545358.0},{"month":"2024-04","revenue":542315.0},{"month":"2024-05","revenue":534712.0},{"month":"2024-06","revenue":564104.0},{"month":"2024-07","revenue":573484.0},{"month":"2024-08","revenue":581571.0},{"month":"2024-09","revenue":613474.0},{"month":"2024-10","revenue":630223.0},{"month":"2024-11","revenue":646445.0},{"month":"2024-12","revenue":654278.0},{"month":"2025-01","revenue":674058.0},{"month":"2025-02","revenue":683210.0},{"month":"2025-03","revenue":656772.0},{"month":"2025-04","revenue":664971.0},{"month":"2025-05","revenue":685134.0},{"month":"2025-06","revenue":687025.0},{"month":"2025-07","revenue":709846.0},{"month":"2025-08","revenue":711598.0},{"month":"2025-09","revenue":703493.0},{"month":"2025-10","revenue":711885.0},{"month":"2025-11","revenue":671822.0},{"month":"2025-12","revenue":678638.0},{"month":"2026-01","revenue":708718.0},{"month":"2026-02","revenue":635013.0}],"Telemed":[{"month":"2022-12","revenue":4001.0},{"month":"2023-01","revenue":4451.0},{"month":"2023-02","revenue":6299.0},{"month":"2023-03","revenue":4302.0},{"month":"2023-04","revenue":5487.0},{"month":"2023-05","revenue":5218.0},{"month":"2023-06","revenue":5135.0},{"month":"2023-07","revenue":5264.0},{"month":"2023-08","revenue":6422.0},{"month":"2023-09","revenue":6382.0},{"month":"2023-10","revenue":6183.0},{"month":"2023-11","revenue":6396.0},{"month":"2023-12","revenue":5955.0},{"month":"2024-01","revenue":5800.0},{"month":"2024-02","revenue":5964.0},{"month":"2024-03","revenue":5598.0},{"month":"2024-04","revenue":5716.0},{"month":"2024-05","revenue":5456.0},{"month":"2024-06","revenue":6394.0},{"month":"2024-07","revenue":6233.0},{"month":"2024-08","revenue":6222.0},{"month":"2024-09","revenue":6382.0},{"month":"2024-10","revenue":6372.0},{"month":"2024-11","revenue":6441.0},{"month":"2024-12","revenue":5341.0},{"month":"2025-01","revenue":5251.0},{"month":"2025-02","revenue":5371.0},{"month":"2025-03","revenue":5191.0},{"month":"2025-04","revenue":5051.0},{"month":"2025-05","revenue":3816.0},{"month":"2025-06","revenue":3845.0},{"month":"2025-07","revenue":2950.0},{"month":"2025-08","revenue":3280.0},{"month":"2025-09","revenue":3299.0},{"month":"2025-10","revenue":5598.0},{"month":"2025-11","revenue":9921.0},{"month":"2025-12","revenue":13258.0},{"month":"2026-01","revenue":15467.0},{"month":"2026-02","revenue":21950.0}],"RepMn":[{"month":"2022-12","revenue":48471.0},{"month":"2023-01","revenue":46325.0},{"month":"2023-02","revenue":43699.0},{"month":"2023-03","revenue":40670.0},{"month":"2023-04","revenue":38996.0},{"month":"2023-05","revenue":38483.0},{"month":"2023-06","revenue":33012.0},{"month":"2023-07","revenue":34405.0},{"month":"2023-08","revenue":33565.0},{"month":"2023-09","revenue":32322.0},{"month":"2023-10","revenue":33313.0},{"month":"2023-11","revenue":31589.0},{"month":"2023-12","revenue":31253.0},{"month":"2024-01","revenue":31572.0},{"month":"2024-02","revenue":29503.0},{"month":"2024-03","revenue":29850.0},{"month":"2024-04","revenue":31571.0},{"month":"2024-05","revenue":31323.0},{"month":"2024-06","revenue":31263.0},{"month":"2024-07","revenue":32876.0},{"month":"2024-08","revenue":33219.0},{"month":"2024-09","revenue":32918.0},{"month":"2024-10","revenue":33017.0},{"month":"2024-11","revenue":34264.0},{"month":"2024-12","revenue":35940.0},{"month":"2025-01","revenue":35777.0},{"month":"2025-02","revenue":36746.0},{"month":"2025-03","revenue":40906.0},{"month":"2025-04","revenue":41560.0},{"month":"2025-05","revenue":41557.0},{"month":"2025-06","revenue":43061.0},{"month":"2025-07","revenue":43835.0},{"month":"2025-08","revenue":43448.0},{"month":"2025-09","revenue":43192.0},{"month":"2025-10","revenue":43124.0},{"month":"2025-11","revenue":40664.0},{"month":"2025-12","revenue":40035.0},{"month":"2026-01","revenue":38548.0},{"month":"2026-02","revenue":37350.0}]},"revenue_by_tier":{"Tier 1":[{"month":"2022-12","revenue":18715.0},{"month":"2023-01","revenue":19355.0},{"month":"2023-02","revenue":19044.0},{"month":"2023-03","revenue":18706.0},{"month":"2023-04","revenue":18597.0},{"month":"2023-05","revenue":21117.0},{"month":"2023-06","revenue":20818.0},{"month":"2023-07","revenue":20389.0},{"month":"2023-08","revenue":20240.0},{"month":"2023-09","revenue":19716.0},{"month":"2023-10","revenue":19745.0},{"month":"2023-11","revenue":19452.0},{"month":"2023-12","revenue":19577.0},{"month":"2024-01","revenue":19537.0},{"month":"2024-02","revenue":19537.0},{"month":"2024-03","revenue":19447.0},{"month":"2024-04","revenue":19529.0},{"month":"2024-05","revenue":19345.0},{"month":"2024-06","revenue":26517.0},{"month":"2024-07","revenue":26754.0},{"month":"2024-08","revenue":27474.0},{"month":"2024-09","revenue":27675.0},{"month":"2024-10","revenue":29271.0},{"month":"2024-11","revenue":29859.0},{"month":"2024-12","revenue":27650.0},{"month":"2025-01","revenue":32294.0},{"month":"2025-02","revenue":28622.0},{"month":"2025-03","revenue":24513.0},{"month":"2025-04","revenue":24346.0},{"month":"2025-05","revenue":24586.0},{"month":"2025-06","revenue":24586.0},{"month":"2025-07","revenue":25585.0},{"month":"2025-08","revenue":25421.0},{"month":"2025-09","revenue":24539.0},{"month":"2025-10","revenue":16938.0},{"month":"2025-11","revenue":16578.0},{"month":"2025-12","revenue":16864.0},{"month":"2026-01","revenue":16545.0},{"month":"2026-02","revenue":16246.0}],"Tier 2":[{"month":"2022-12","revenue":54375.0},{"month":"2023-01","revenue":54315.0},{"month":"2023-02","revenue":53376.0},{"month":"2023-03","revenue":53365.0},{"month":"2023-04","revenue":52718.0},{"month":"2023-05","revenue":54894.0},{"month":"2023-06","revenue":53790.0},{"month":"2023-07","revenue":52360.0},{"month":"2023-08","revenue":54765.0},{"month":"2023-09","revenue":54194.0},{"month":"2023-10","revenue":52428.0},{"month":"2023-11","revenue":52340.0},{"month":"2023-12","revenue":52449.0},{"month":"2024-01","revenue":52177.0},{"month":"2024-02","revenue":54673.0},{"month":"2024-03","revenue":54033.0},{"month":"2024-04","revenue":53824.0},{"month":"2024-05","revenue":55896.0},{"month":"2024-06","revenue":61776.0},{"month":"2024-07","revenue":60684.0},{"month":"2024-08","revenue":58364.0},{"month":"2024-09","revenue":60049.0},{"month":"2024-10","revenue":60986.0},{"month":"2024-11","revenue":63950.0},{"month":"2024-12","revenue":62978.0},{"month":"2025-01","revenue":62690.0},{"month":"2025-02","revenue":65230.0},{"month":"2025-03","revenue":65286.0},{"month":"2025-04","revenue":64128.0},{"month":"2025-05","revenue":60442.0},{"month":"2025-06","revenue":60984.0},{"month":"2025-07","revenue":62896.0},{"month":"2025-08","revenue":60813.0},{"month":"2025-09","revenue":62053.0},{"month":"2025-10","revenue":63148.0},{"month":"2025-11","revenue":60587.0},{"month":"2025-12","revenue":60475.0},{"month":"2026-01","revenue":69920.0},{"month":"2026-02","revenue":69114.0}],"Tier 3":[{"month":"2022-12","revenue":276329.0},{"month":"2023-01","revenue":266409.0},{"month":"2023-02","revenue":274479.0},{"month":"2023-03","revenue":269051.0},{"month":"2023-04","revenue":277240.0},{"month":"2023-05","revenue":276012.0},{"month":"2023-06","revenue":296247.0},{"month":"2023-07","revenue":305200.0},{"month":"2023-08","revenue":309368.0},{"month":"2023-09","revenue":326023.0},{"month":"2023-10","revenue":334830.0},{"month":"2023-11","revenue":346591.0},{"month":"2023-12","revenue":355439.0},{"month":"2024-01","revenue":380794.0},{"month":"2024-02","revenue":393301.0},{"month":"2024-03","revenue":389022.0},{"month":"2024-04","revenue":388946.0},{"month":"2024-05","revenue":397988.0},{"month":"2024-06","revenue":413428.0},{"month":"2024-07","revenue":416006.0},{"month":"2024-08","revenue":430510.0},{"month":"2024-09","revenue":446433.0},{"month":"2024-10","revenue":464032.0},{"month":"2024-11","revenue":475458.0},{"month":"2024-12","revenue":486312.0},{"month":"2025-01","revenue":494035.0},{"month":"2025-02","revenue":501359.0},{"month":"2025-03","revenue":506245.0},{"month":"2025-04","revenue":515025.0},{"month":"2025-05","revenue":538093.0},{"month":"2025-06","revenue":539639.0},{"month":"2025-07","revenue":560543.0},{"month":"2025-08","revenue":561460.0},{"month":"2025-09","revenue":549444.0},{"month":"2025-10","revenue":557392.0},{"month":"2025-11","revenue":517647.0},{"month":"2025-12","revenue":519935.0},{"month":"2026-01","revenue":546203.0},{"month":"2026-02","revenue":503617.0}],"Tier 4":[{"month":"2022-12","revenue":16499.0},{"month":"2023-01","revenue":17017.0},{"month":"2023-02","revenue":17618.0},{"month":"2023-03","revenue":17385.0},{"month":"2023-04","revenue":16600.0},{"month":"2023-05","revenue":18689.0},{"month":"2023-06","revenue":17909.0},{"month":"2023-07","revenue":18943.0},{"month":"2023-08","revenue":18813.0},{"month":"2023-09","revenue":19381.0},{"month":"2023-10","revenue":41267.0},{"month":"2023-11","revenue":41710.0},{"month":"2023-12","revenue":40829.0},{"month":"2024-01","revenue":40848.0},{"month":"2024-02","revenue":40916.0},{"month":"2024-03","revenue":41222.0},{"month":"2024-04","revenue":41561.0},{"month":"2024-05","revenue":20516.0},{"month":"2024-06","revenue":19298.0},{"month":"2024-07","revenue":25364.0},{"month":"2024-08","revenue":20174.0},{"month":"2024-09","revenue":30558.0},{"month":"2024-10","revenue":24524.0},{"month":"2024-11","revenue":23118.0},{"month":"2024-12","revenue":20098.0},{"month":"2025-01","revenue":24089.0},{"month":"2025-02","revenue":24399.0},{"month":"2025-03","revenue":26278.0},{"month":"2025-04","revenue":25432.0},{"month":"2025-05","revenue":25973.0},{"month":"2025-06","revenue":24822.0},{"month":"2025-07","revenue":21707.0},{"month":"2025-08","revenue":22034.0},{"month":"2025-09","revenue":21877.0},{"month":"2025-10","revenue":24057.0},{"month":"2025-11","revenue":22950.0},{"month":"2025-12","revenue":23594.0},{"month":"2026-01","revenue":23580.0},{"month":"2026-02","revenue":22536.0}],"Multi Specialty":[{"month":"2022-12","revenue":15000.0},{"month":"2023-01","revenue":15000.0},{"month":"2023-02","revenue":15000.0},{"month":"2023-03","revenue":20225.0},{"month":"2023-04","revenue":21925.0},{"month":"2023-05","revenue":23937.0},{"month":"2023-06","revenue":26163.0},{"month":"2023-07","revenue":26799.0},{"month":"2023-08","revenue":28332.0},{"month":"2023-09","revenue":29180.0},{"month":"2023-10","revenue":30505.0},{"month":"2023-11","revenue":33897.0},{"month":"2023-12","revenue":35169.0},{"month":"2024-01","revenue":35964.0},{"month":"2024-02","revenue":40575.0},{"month":"2024-03","revenue":41635.0},{"month":"2024-04","revenue":38455.0},{"month":"2024-05","revenue":40966.0},{"month":"2024-06","revenue":43086.0},{"month":"2024-07","revenue":44676.0},{"month":"2024-08","revenue":45050.0},{"month":"2024-09","revenue":48760.0},{"month":"2024-10","revenue":51410.0},{"month":"2024-11","revenue":54060.0},{"month":"2024-12","revenue":57240.0},{"month":"2025-01","revenue":60950.0},{"month":"2025-02","revenue":63600.0},{"month":"2025-03","revenue":34450.0},{"month":"2025-04","revenue":36040.0},{"month":"2025-05","revenue":36040.0},{"month":"2025-06","revenue":36994.0},{"month":"2025-07","revenue":39114.0},{"month":"2025-08","revenue":41870.0},{"month":"2025-09","revenue":45580.0},{"month":"2025-10","revenue":50350.0},{"month":"2025-11","revenue":54060.0},{"month":"2025-12","revenue":57770.0},{"month":"2026-01","revenue":52470.0},{"month":"2026-02","revenue":23500.0}]},"revenue_by_type":{"Enterprise":[{"month":"2022-12","revenue":63940.0},{"month":"2023-01","revenue":62494.0},{"month":"2023-02","revenue":77522.0},{"month":"2023-03","revenue":69371.0},{"month":"2023-04","revenue":76452.0},{"month":"2023-05","revenue":68294.0},{"month":"2023-06","revenue":79250.0},{"month":"2023-07","revenue":91246.0},{"month":"2023-08","revenue":90266.0},{"month":"2023-09","revenue":109874.0},{"month":"2023-10","revenue":135893.0},{"month":"2023-11","revenue":149923.0},{"month":"2023-12","revenue":156883.0},{"month":"2024-01","revenue":177538.0},{"month":"2024-02","revenue":189547.0},{"month":"2024-03","revenue":188713.0},{"month":"2024-04","revenue":180474.0},{"month":"2024-05","revenue":161697.0},{"month":"2024-06","revenue":190809.0},{"month":"2024-07","revenue":200689.0},{"month":"2024-08","revenue":207629.0},{"month":"2024-09","revenue":232429.0},{"month":"2024-10","revenue":238987.0},{"month":"2024-11","revenue":245682.0},{"month":"2024-12","revenue":255226.0},{"month":"2025-01","revenue":266248.0},{"month":"2025-02","revenue":270088.0},{"month":"2025-03","revenue":234566.0},{"month":"2025-04","revenue":240676.0},{"month":"2025-05","revenue":263002.0},{"month":"2025-06","revenue":261731.0},{"month":"2025-07","revenue":270176.0},{"month":"2025-08","revenue":265552.0},{"month":"2025-09","revenue":253182.0},{"month":"2025-10","revenue":252907.0},{"month":"2025-11","revenue":220249.0},{"month":"2025-12","revenue":224729.0},{"month":"2026-01","revenue":249751.0},{"month":"2026-02","revenue":178113.0}],"Non-Enterprise":[{"month":"2022-12","revenue":316978.0},{"month":"2023-01","revenue":309602.0},{"month":"2023-02","revenue":301995.0},{"month":"2023-03","revenue":309361.0},{"month":"2023-04","revenue":310629.0},{"month":"2023-05","revenue":326355.0},{"month":"2023-06","revenue":335677.0},{"month":"2023-07","revenue":332445.0},{"month":"2023-08","revenue":341252.0},{"month":"2023-09","revenue":338620.0},{"month":"2023-10","revenue":342882.0},{"month":"2023-11","revenue":344066.0},{"month":"2023-12","revenue":346580.0},{"month":"2024-01","revenue":351782.0},{"month":"2024-02","revenue":359455.0},{"month":"2024-03","revenue":356645.0},{"month":"2024-04","revenue":361841.0},{"month":"2024-05","revenue":373015.0},{"month":"2024-06","revenue":373295.0},{"month":"2024-07","revenue":372795.0},{"month":"2024-08","revenue":373942.0},{"month":"2024-09","revenue":381046.0},{"month":"2024-10","revenue":391236.0},{"month":"2024-11","revenue":400763.0},{"month":"2024-12","revenue":399052.0},{"month":"2025-01","revenue":407810.0},{"month":"2025-02","revenue":413122.0},{"month":"2025-03","revenue":422206.0},{"month":"2025-04","revenue":424295.0},{"month":"2025-05","revenue":422132.0},{"month":"2025-06","revenue":425294.0},{"month":"2025-07","revenue":439670.0},{"month":"2025-08","revenue":446046.0},{"month":"2025-09","revenue":450311.0},{"month":"2025-10","revenue":458978.0},{"month":"2025-11","revenue":451573.0},{"month":"2025-12","revenue":453910.0},{"month":"2026-01","revenue":458967.0},{"month":"2026-02","revenue":456900.0}]},"revenue_by_range":{"$0-$75":[{"month":"2022-12","revenue":31369.0},{"month":"2023-01","revenue":32102.0},{"month":"2023-02","revenue":32310.0},{"month":"2023-03","revenue":33595.0},{"month":"2023-04","revenue":35461.0},{"month":"2023-05","revenue":30937.0},{"month":"2023-06","revenue":40815.0},{"month":"2023-07","revenue":51883.0},{"month":"2023-08","revenue":43772.0},{"month":"2023-09","revenue":45060.0},{"month":"2023-10","revenue":72693.0},{"month":"2023-11","revenue":75876.0},{"month":"2023-12","revenue":80250.0},{"month":"2024-01","revenue":95421.0},{"month":"2024-02","revenue":99717.0},{"month":"2024-03","revenue":99862.0},{"month":"2024-04","revenue":96483.0},{"month":"2024-05","revenue":76773.0},{"month":"2024-06","revenue":80115.0},{"month":"2024-07","revenue":81705.0},{"month":"2024-08","revenue":84975.0},{"month":"2024-09","revenue":88636.0},{"month":"2024-10","revenue":90542.0},{"month":"2024-11","revenue":93192.0},{"month":"2024-12","revenue":95238.0},{"month":"2025-01","revenue":103592.0},{"month":"2025-02","revenue":103920.0},{"month":"2025-03","revenue":78577.0},{"month":"2025-04","revenue":105296.0},{"month":"2025-05","revenue":105038.0},{"month":"2025-06","revenue":108706.0},{"month":"2025-07","revenue":110970.0},{"month":"2025-08","revenue":113795.0},{"month":"2025-09","revenue":117670.0},{"month":"2025-10","revenue":124762.0},{"month":"2025-11","revenue":88595.0},{"month":"2025-12","revenue":93233.0},{"month":"2026-01","revenue":91029.0},{"month":"2026-02","revenue":36630.0}],"$75-$150":[{"month":"2022-12","revenue":115086.0},{"month":"2023-01","revenue":109725.0},{"month":"2023-02","revenue":113760.0},{"month":"2023-03","revenue":112322.0},{"month":"2023-04","revenue":115608.0},{"month":"2023-05","revenue":119084.0},{"month":"2023-06","revenue":117597.0},{"month":"2023-07","revenue":116385.0},{"month":"2023-08","revenue":125057.0},{"month":"2023-09","revenue":144614.0},{"month":"2023-10","revenue":142403.0},{"month":"2023-11","revenue":151534.0},{"month":"2023-12","revenue":155708.0},{"month":"2024-01","revenue":162169.0},{"month":"2024-02","revenue":165563.0},{"month":"2024-03","revenue":166194.0},{"month":"2024-04","revenue":167005.0},{"month":"2024-05","revenue":173112.0},{"month":"2024-06","revenue":187289.0},{"month":"2024-07","revenue":193126.0},{"month":"2024-08","revenue":194379.0},{"month":"2024-09","revenue":213443.0},{"month":"2024-10","revenue":220969.0},{"month":"2024-11","revenue":225143.0},{"month":"2024-12","revenue":229946.0},{"month":"2025-01","revenue":241018.0},{"month":"2025-02","revenue":241533.0},{"month":"2025-03","revenue":235576.0},{"month":"2025-04","revenue":216398.0},{"month":"2025-05","revenue":238278.0},{"month":"2025-06","revenue":234113.0},{"month":"2025-07","revenue":246056.0},{"month":"2025-08","revenue":239977.0},{"month":"2025-09","revenue":225064.0},{"month":"2025-10","revenue":220747.0},{"month":"2025-11","revenue":225878.0},{"month":"2025-12","revenue":236020.0},{"month":"2026-01","revenue":269383.0},{"month":"2026-02","revenue":250900.0}],"$150-$300":[{"month":"2022-12","revenue":234639.0},{"month":"2023-01","revenue":227265.0},{"month":"2023-02","revenue":230064.0},{"month":"2023-03","revenue":227440.0},{"month":"2023-04","revenue":230146.0},{"month":"2023-05","revenue":234866.0},{"month":"2023-06","revenue":247773.0},{"month":"2023-07","revenue":246890.0},{"month":"2023-08","revenue":249874.0},{"month":"2023-09","revenue":249099.0},{"month":"2023-10","revenue":252821.0},{"month":"2023-11","revenue":255412.0},{"month":"2023-12","revenue":256242.0},{"month":"2024-01","revenue":259842.0},{"month":"2024-02","revenue":269152.0},{"month":"2024-03","revenue":266591.0},{"month":"2024-04","revenue":264909.0},{"month":"2024-05","revenue":269772.0},{"month":"2024-06","revenue":281557.0},{"month":"2024-07","revenue":283431.0},{"month":"2024-08","revenue":287693.0},{"month":"2024-09","revenue":296173.0},{"month":"2024-10","revenue":303281.0},{"month":"2024-11","revenue":311279.0},{"month":"2024-12","revenue":313019.0},{"month":"2025-01","revenue":313789.0},{"month":"2025-02","revenue":321739.0},{"month":"2025-03","revenue":327110.0},{"month":"2025-04","revenue":328324.0},{"month":"2025-05","revenue":326466.0},{"month":"2025-06","revenue":328865.0},{"month":"2025-07","revenue":338067.0},{"month":"2025-08","revenue":344389.0},{"month":"2025-09","revenue":347322.0},{"month":"2025-10","revenue":353292.0},{"month":"2025-11","revenue":344510.0},{"month":"2025-12","revenue":336678.0},{"month":"2026-01","revenue":336296.0},{"month":"2026-02","revenue":335992.0}],"$300+":[{"month":"2022-12","revenue":1069.0},{"month":"2023-01","revenue":3004.0},{"month":"2023-02","revenue":3383.0},{"month":"2023-03","revenue":5375.0},{"month":"2023-04","revenue":5866.0},{"month":"2023-05","revenue":9762.0},{"month":"2023-06","revenue":8742.0},{"month":"2023-07","revenue":8533.0},{"month":"2023-08","revenue":12815.0},{"month":"2023-09","revenue":9721.0},{"month":"2023-10","revenue":10858.0},{"month":"2023-11","revenue":11167.0},{"month":"2023-12","revenue":11263.0},{"month":"2024-01","revenue":11888.0},{"month":"2024-02","revenue":14570.0},{"month":"2024-03","revenue":12711.0},{"month":"2024-04","revenue":13918.0},{"month":"2024-05","revenue":15055.0},{"month":"2024-06","revenue":15143.0},{"month":"2024-07","revenue":15222.0},{"month":"2024-08","revenue":14524.0},{"month":"2024-09","revenue":15222.0},{"month":"2024-10","revenue":15431.0},{"month":"2024-11","revenue":16831.0},{"month":"2024-12","revenue":16074.0},{"month":"2025-01","revenue":15659.0},{"month":"2025-02","revenue":16018.0},{"month":"2025-03","revenue":15509.0},{"month":"2025-04","revenue":14953.0},{"month":"2025-05","revenue":15352.0},{"month":"2025-06","revenue":15341.0},{"month":"2025-07","revenue":14753.0},{"month":"2025-08","revenue":13437.0},{"month":"2025-09","revenue":13437.0},{"month":"2025-10","revenue":13083.0},{"month":"2025-11","revenue":12840.0},{"month":"2025-12","revenue":12708.0},{"month":"2026-01","revenue":12010.0},{"month":"2026-02","revenue":11491.0}]},"active_accounts":[{"month":"2022-12","profiles":2899,"accounts":1196,"arpc":132.0,"arpc_account":320.0,"revenue":382163.0},{"month":"2023-01","profiles":2769,"accounts":1196,"arpc":134.0,"arpc_account":311.0,"revenue":372096.0},{"month":"2023-02","profiles":2885,"accounts":1173,"arpc":132.0,"arpc_account":324.0,"revenue":379517.0},{"month":"2023-03","profiles":2775,"accounts":1154,"arpc":136.0,"arpc_account":328.0,"revenue":378732.0},{"month":"2023-04","profiles":2870,"accounts":1167,"arpc":135.0,"arpc_account":332.0,"revenue":387081.0},{"month":"2023-05","profiles":2757,"accounts":1213,"arpc":143.0,"arpc_account":325.0,"revenue":394649.0},{"month":"2023-06","profiles":3041,"accounts":1229,"arpc":136.0,"arpc_account":338.0,"revenue":414927.0},{"month":"2023-07","profiles":3239,"accounts":1252,"arpc":131.0,"arpc_account":338.0,"revenue":423691.0},{"month":"2023-08","profiles":3212,"accounts":1271,"arpc":134.0,"arpc_account":340.0,"revenue":431518.0},{"month":"2023-09","profiles":3376,"accounts":1289,"arpc":133.0,"arpc_account":348.0,"revenue":448494.0},{"month":"2023-10","profiles":3843,"accounts":1323,"arpc":125.0,"arpc_account":362.0,"revenue":478775.0},{"month":"2023-11","profiles":4020,"accounts":1317,"arpc":123.0,"arpc_account":375.0,"revenue":493989.0},{"month":"2023-12","profiles":4129,"accounts":1325,"arpc":122.0,"arpc_account":380.0,"revenue":503463.0},{"month":"2024-01","profiles":4493,"accounts":1346,"arpc":118.0,"arpc_account":393.0,"revenue":529320.0},{"month":"2024-02","profiles":4674,"accounts":1371,"arpc":117.0,"arpc_account":400.0,"revenue":549002.0},{"month":"2024-03","profiles":4672,"accounts":1382,"arpc":117.0,"arpc_account":395.0,"revenue":545358.0},{"month":"2024-04","profiles":4641,"accounts":1410,"arpc":117.0,"arpc_account":385.0,"revenue":542315.0},{"month":"2024-05","profiles":4558,"accounts":1440,"arpc":117.0,"arpc_account":371.0,"revenue":534712.0},{"month":"2024-06","profiles":4759,"accounts":1437,"arpc":119.0,"arpc_account":393.0,"revenue":564104.0},{"month":"2024-07","profiles":4856,"accounts":1443,"arpc":118.0,"arpc_account":397.0,"revenue":573484.0},{"month":"2024-08","profiles":4954,"accounts":1453,"arpc":117.0,"arpc_account":400.0,"revenue":581571.0},{"month":"2024-09","profiles":5250,"accounts":1474,"arpc":117.0,"arpc_account":416.0,"revenue":613474.0},{"month":"2024-10","profiles":5393,"accounts":1487,"arpc":117.0,"arpc_account":424.0,"revenue":630223.0},{"month":"2024-11","profiles":5517,"accounts":1508,"arpc":117.0,"arpc_account":429.0,"revenue":646445.0},{"month":"2024-12","profiles":5672,"accounts":1518,"arpc":115.0,"arpc_account":431.0,"revenue":654278.0},{"month":"2025-01","profiles":5924,"accounts":1535,"arpc":114.0,"arpc_account":439.0,"revenue":674058.0},{"month":"2025-02","profiles":6013,"accounts":1574,"arpc":114.0,"arpc_account":434.0,"revenue":683210.0},{"month":"2025-03","profiles":5702,"accounts":1622,"arpc":115.0,"arpc_account":405.0,"revenue":656772.0},{"month":"2025-04","profiles":5949,"accounts":1612,"arpc":112.0,"arpc_account":413.0,"revenue":664971.0},{"month":"2025-05","profiles":6320,"accounts":1640,"arpc":108.0,"arpc_account":418.0,"revenue":685134.0},{"month":"2025-06","profiles":6348,"accounts":1675,"arpc":108.0,"arpc_account":410.0,"revenue":687200.0},{"month":"2025-07","profiles":6570,"accounts":1716,"arpc":108.0,"arpc_account":414.0,"revenue":709846.0},{"month":"2025-08","profiles":6504,"accounts":1754,"arpc":109.0,"arpc_account":406.0,"revenue":711598.0},{"month":"2025-09","profiles":6461,"accounts":1761,"arpc":109.0,"arpc_account":399.0,"revenue":703493.0},{"month":"2025-10","profiles":6674,"accounts":1794,"arpc":107.0,"arpc_account":397.0,"revenue":711885.0},{"month":"2025-11","profiles":6029,"accounts":1777,"arpc":111.0,"arpc_account":378.0,"revenue":672027.0},{"month":"2025-12","profiles":6220,"accounts":1788,"arpc":109.0,"arpc_account":380.0,"revenue":678638.0},{"month":"2026-01","profiles":6477,"accounts":1811,"arpc":109.0,"arpc_account":391.0,"revenue":708718.0},{"month":"2026-02","profiles":5784,"accounts":1805,"arpc":110.0,"arpc_account":352.0,"revenue":635013.0}],"arpc_by_tier":[{"tier":"Tier 1","profiles":159,"accounts":15,"arpc":102.0,"arpc_account":1083.0,"revenue":16246.0},{"tier":"Tier 2","profiles":349,"accounts":169,"arpc":198.0,"arpc_account":409.0,"revenue":69114.0},{"tier":"Tier 3","profiles":4010,"accounts":1494,"arpc":126.0,"arpc_account":337.0,"revenue":503617.0},{"tier":"Tier 4","profiles":326,"accounts":126,"arpc":69.0,"arpc_account":179.0,"revenue":22536.0},{"tier":"Multi Specialty","profiles":940,"accounts":1,"arpc":25.0,"arpc_account":23500.0,"revenue":23500.0}],"arpc_by_range":[{"range":"$0-$75","profiles":1301,"accounts":19,"arpc":28.0,"revenue":36630.0},{"range":"$75-$150","profiles":2601,"accounts":394,"arpc":96.0,"revenue":250900.0},{"range":"$150-$300","profiles":1843,"accounts":1358,"arpc":182.0,"revenue":335992.0},{"range":"$300+","profiles":39,"accounts":34,"arpc":295.0,"revenue":11491.0}],"profiles_by_tier":{"Tier 1":[{"month":"2022-12","profiles":167},{"month":"2023-01","profiles":168},{"month":"2023-02","profiles":164},{"month":"2023-03","profiles":162},{"month":"2023-04","profiles":162},{"month":"2023-05","profiles":161},{"month":"2023-06","profiles":161},{"month":"2023-07","profiles":160},{"month":"2023-08","profiles":159},{"month":"2023-09","profiles":156},{"month":"2023-10","profiles":156},{"month":"2023-11","profiles":155},{"month":"2023-12","profiles":156},{"month":"2024-01","profiles":156},{"month":"2024-02","profiles":156},{"month":"2024-03","profiles":157},{"month":"2024-04","profiles":157},{"month":"2024-05","profiles":156},{"month":"2024-06","profiles":202},{"month":"2024-07","profiles":203},{"month":"2024-08","profiles":209},{"month":"2024-09","profiles":211},{"month":"2024-10","profiles":220},{"month":"2024-11","profiles":226},{"month":"2024-12","profiles":207},{"month":"2025-01","profiles":243},{"month":"2025-02","profiles":223},{"month":"2025-03","profiles":222},{"month":"2025-04","profiles":222},{"month":"2025-05","profiles":222},{"month":"2025-06","profiles":222},{"month":"2025-07","profiles":223},{"month":"2025-08","profiles":222},{"month":"2025-09","profiles":216},{"month":"2025-10","profiles":145},{"month":"2025-11","profiles":155},{"month":"2025-12","profiles":160},{"month":"2026-01","profiles":160},{"month":"2026-02","profiles":159}],"Tier 2":[{"month":"2022-12","profiles":265},{"month":"2023-01","profiles":260},{"month":"2023-02","profiles":252},{"month":"2023-03","profiles":242},{"month":"2023-04","profiles":240},{"month":"2023-05","profiles":252},{"month":"2023-06","profiles":249},{"month":"2023-07","profiles":242},{"month":"2023-08","profiles":247},{"month":"2023-09","profiles":247},{"month":"2023-10","profiles":235},{"month":"2023-11","profiles":233},{"month":"2023-12","profiles":234},{"month":"2024-01","profiles":233},{"month":"2024-02","profiles":236},{"month":"2024-03","profiles":238},{"month":"2024-04","profiles":234},{"month":"2024-05","profiles":243},{"month":"2024-06","profiles":269},{"month":"2024-07","profiles":260},{"month":"2024-08","profiles":250},{"month":"2024-09","profiles":258},{"month":"2024-10","profiles":263},{"month":"2024-11","profiles":271},{"month":"2024-12","profiles":268},{"month":"2025-01","profiles":269},{"month":"2025-02","profiles":283},{"month":"2025-03","profiles":285},{"month":"2025-04","profiles":281},{"month":"2025-05","profiles":268},{"month":"2025-06","profiles":270},{"month":"2025-07","profiles":284},{"month":"2025-08","profiles":273},{"month":"2025-09","profiles":278},{"month":"2025-10","profiles":284},{"month":"2025-11","profiles":274},{"month":"2025-12","profiles":274},{"month":"2026-01","profiles":352},{"month":"2026-02","profiles":349}],"Tier 3":[{"month":"2022-12","profiles":1999},{"month":"2023-01","profiles":1878},{"month":"2023-02","profiles":2008},{"month":"2023-03","profiles":1853},{"month":"2023-04","profiles":1924},{"month":"2023-05","profiles":1770},{"month":"2023-06","profiles":2019},{"month":"2023-07","profiles":2208},{"month":"2023-08","profiles":2149},{"month":"2023-09","profiles":2297},{"month":"2023-10","profiles":2396},{"month":"2023-11","profiles":2506},{"month":"2023-12","profiles":2595},{"month":"2024-01","profiles":2945},{"month":"2024-02","profiles":3035},{"month":"2024-03","profiles":3015},{"month":"2024-04","profiles":3044},{"month":"2024-05","profiles":3258},{"month":"2024-06","profiles":3357},{"month":"2024-07","profiles":3379},{"month":"2024-08","profiles":3483},{"month":"2024-09","profiles":3602},{"month":"2024-10","profiles":3731},{"month":"2024-11","profiles":3804},{"month":"2024-12","profiles":3921},{"month":"2025-01","profiles":4018},{"month":"2025-02","profiles":4061},{"month":"2025-03","profiles":4286},{"month":"2025-04","profiles":4514},{"month":"2025-05","profiles":4890},{"month":"2025-06","profiles":4937},{"month":"2025-07","profiles":5145},{"month":"2025-08","profiles":5035},{"month":"2025-09","profiles":4922},{"month":"2025-10","profiles":4981},{"month":"2025-11","profiles":4272},{"month":"2025-12","profiles":4361},{"month":"2026-01","profiles":4638},{"month":"2026-02","profiles":4010}],"Tier 4":[{"month":"2022-12","profiles":168},{"month":"2023-01","profiles":163},{"month":"2023-02","profiles":161},{"month":"2023-03","profiles":158},{"month":"2023-04","profiles":150},{"month":"2023-05","profiles":161},{"month":"2023-06","profiles":157},{"month":"2023-07","profiles":162},{"month":"2023-08","profiles":163},{"month":"2023-09","profiles":166},{"month":"2023-10","profiles":521},{"month":"2023-11","profiles":527},{"month":"2023-12","profiles":521},{"month":"2024-01","profiles":521},{"month":"2024-02","profiles":522},{"month":"2024-03","profiles":517},{"month":"2024-04","profiles":521},{"month":"2024-05","profiles":167},{"month":"2024-06","profiles":157},{"month":"2024-07","profiles":210},{"month":"2024-08","profiles":162},{"month":"2024-09","profiles":259},{"month":"2024-10","profiles":209},{"month":"2024-11","profiles":196},{"month":"2024-12","profiles":196},{"month":"2025-01","profiles":244},{"month":"2025-02","profiles":246},{"month":"2025-03","profiles":259},{"month":"2025-04","profiles":252},{"month":"2025-05","profiles":260},{"month":"2025-06","profiles":221},{"month":"2025-07","profiles":180},{"month":"2025-08","profiles":184},{"month":"2025-09","profiles":185},{"month":"2025-10","profiles":314},{"month":"2025-11","profiles":308},{"month":"2025-12","profiles":335},{"month":"2026-01","profiles":337},{"month":"2026-02","profiles":326}],"Multi Specialty":[{"month":"2022-12","profiles":300},{"month":"2023-01","profiles":300},{"month":"2023-02","profiles":300},{"month":"2023-03","profiles":360},{"month":"2023-04","profiles":394},{"month":"2023-05","profiles":413},{"month":"2023-06","profiles":455},{"month":"2023-07","profiles":467},{"month":"2023-08","profiles":494},{"month":"2023-09","profiles":510},{"month":"2023-10","profiles":535},{"month":"2023-11","profiles":599},{"month":"2023-12","profiles":623},{"month":"2024-01","profiles":638},{"month":"2024-02","profiles":725},{"month":"2024-03","profiles":745},{"month":"2024-04","profiles":685},{"month":"2024-05","profiles":734},{"month":"2024-06","profiles":774},{"month":"2024-07","profiles":804},{"month":"2024-08","profiles":850},{"month":"2024-09","profiles":920},{"month":"2024-10","profiles":970},{"month":"2024-11","profiles":1020},{"month":"2024-12","profiles":1080},{"month":"2025-01","profiles":1150},{"month":"2025-02","profiles":1200},{"month":"2025-03","profiles":650},{"month":"2025-04","profiles":680},{"month":"2025-05","profiles":680},{"month":"2025-06","profiles":698},{"month":"2025-07","profiles":738},{"month":"2025-08","profiles":790},{"month":"2025-09","profiles":860},{"month":"2025-10","profiles":950},{"month":"2025-11","profiles":1020},{"month":"2025-12","profiles":1090},{"month":"2026-01","profiles":990},{"month":"2026-02","profiles":940}]},"top_aops":[{"aop":"Psychiatry","revenue_6m":790741.0,"profiles":1336,"accounts":403,"arpc":104.0},{"aop":"Family Medicine/Internal Medicine","revenue_6m":687360.0,"profiles":517,"accounts":264,"arpc":99.0},{"aop":"Multi Specialty","revenue_6m":283730.0,"profiles":940,"accounts":1,"arpc":48.0},{"aop":"Orthopaedic Surgery","revenue_6m":249502.0,"profiles":273,"accounts":100,"arpc":167.0},{"aop":"Primary Care","revenue_6m":176148.0,"profiles":274,"accounts":93,"arpc":118.0},{"aop":"Dermatology","revenue_6m":146653.0,"profiles":157,"accounts":65,"arpc":158.0},{"aop":"Sports Medicine","revenue_6m":144948.0,"profiles":262,"accounts":9,"arpc":92.0},{"aop":"Pain Management","revenue_6m":103656.0,"profiles":120,"accounts":47,"arpc":162.0},{"aop":"Psychology","revenue_6m":101500.0,"profiles":104,"accounts":72,"arpc":170.0},{"aop":"Plastic Surgery","revenue_6m":97122.0,"profiles":63,"accounts":55,"arpc":254.0},{"aop":"General Dentistry","revenue_6m":91175.0,"profiles":220,"accounts":56,"arpc":103.0},{"aop":"Oncology","revenue_6m":86554.0,"profiles":150,"accounts":8,"arpc":100.0},{"aop":"Chiropractor","revenue_6m":79385.0,"profiles":246,"accounts":74,"arpc":69.0},{"aop":"Ophthalmology","revenue_6m":79139.0,"profiles":84,"accounts":32,"arpc":152.0},{"aop":"Podiatry","revenue_6m":76512.0,"profiles":79,"accounts":52,"arpc":173.0},{"aop":"Gastroenterology","revenue_6m":76041.0,"profiles":112,"accounts":20,"arpc":111.0},{"aop":"OB/GYN","revenue_6m":69918.0,"profiles":77,"accounts":47,"arpc":179.0},{"aop":"Vascular Surgery","revenue_6m":58659.0,"profiles":97,"accounts":20,"arpc":226.0},{"aop":"Addiction Medicine","revenue_6m":52485.0,"profiles":45,"accounts":25,"arpc":202.0},{"aop":"General Surgery","revenue_6m":51598.0,"profiles":39,"accounts":14,"arpc":226.0},{"aop":"Therapy","revenue_6m":49925.0,"profiles":42,"accounts":32,"arpc":149.0},{"aop":"Neurological Surgery","revenue_6m":45301.0,"profiles":42,"accounts":16,"arpc":181.0},{"aop":"Cardiology","revenue_6m":44949.0,"profiles":38,"accounts":19,"arpc":193.0},{"aop":"Functional Medicine","revenue_6m":42378.0,"profiles":55,"accounts":15,"arpc":122.0},{"aop":"Pediatric Orthopedics","revenue_6m":40081.0,"profiles":45,"accounts":1,"arpc":149.0}],"churn_rates":[{"month":"2023-01","cancel_pct":4.6,"contraction_pct":5.1,"total_churn_pct":9.7,"new_mrr":23728.0,"churned":-19920.0,"ending_mrr":422872.0},{"month":"2023-02","cancel_pct":7.2,"contraction_pct":0.7,"total_churn_pct":7.9,"new_mrr":26639.0,"churned":-30517.0,"ending_mrr":429515.0},{"month":"2023-03","cancel_pct":8.6,"contraction_pct":1.8,"total_churn_pct":10.4,"new_mrr":35407.0,"churned":-37061.0,"ending_mrr":423704.0},{"month":"2023-04","cancel_pct":4.7,"contraction_pct":1.5,"total_churn_pct":6.2,"new_mrr":30755.0,"churned":-20027.0,"ending_mrr":431564.0},{"month":"2023-05","cancel_pct":8.1,"contraction_pct":1.4,"total_churn_pct":9.5,"new_mrr":41565.0,"churned":-34973.0,"ending_mrr":438350.0},{"month":"2023-06","cancel_pct":6.3,"contraction_pct":1.9,"total_churn_pct":8.3,"new_mrr":36619.0,"churned":-27799.0,"ending_mrr":453074.0},{"month":"2023-07","cancel_pct":4.9,"contraction_pct":2.3,"total_churn_pct":7.2,"new_mrr":30560.0,"churned":-22237.0,"ending_mrr":463360.0},{"month":"2023-08","cancel_pct":3.9,"contraction_pct":4.0,"total_churn_pct":7.9,"new_mrr":39997.0,"churned":-18035.0,"ending_mrr":471504.0},{"month":"2023-09","cancel_pct":4.5,"contraction_pct":1.8,"total_churn_pct":6.3,"new_mrr":32188.0,"churned":-21248.0,"ending_mrr":487198.0},{"month":"2023-10","cancel_pct":3.2,"contraction_pct":0.7,"total_churn_pct":4.0,"new_mrr":42598.0,"churned":-15821.0,"ending_mrr":518271.0},{"month":"2023-11","cancel_pct":5.9,"contraction_pct":0.3,"total_churn_pct":6.2,"new_mrr":36560.0,"churned":-30696.0,"ending_mrr":531975.0},{"month":"2023-12","cancel_pct":3.9,"contraction_pct":0.3,"total_churn_pct":4.2,"new_mrr":25108.0,"churned":-20779.0,"ending_mrr":540671.0},{"month":"2024-01","cancel_pct":3.7,"contraction_pct":0.8,"total_churn_pct":4.5,"new_mrr":29974.0,"churned":-20176.0,"ending_mrr":566736.0},{"month":"2024-02","cancel_pct":4.1,"contraction_pct":1.0,"total_churn_pct":5.1,"new_mrr":37861.0,"churned":-23449.0,"ending_mrr":584493.0},{"month":"2024-03","cancel_pct":4.5,"contraction_pct":1.0,"total_churn_pct":5.5,"new_mrr":25094.0,"churned":-26059.0,"ending_mrr":580831.0},{"month":"2024-04","cancel_pct":4.1,"contraction_pct":1.8,"total_churn_pct":5.9,"new_mrr":31049.0,"churned":-23701.0,"ending_mrr":579626.0},{"month":"2024-05","cancel_pct":7.3,"contraction_pct":0.9,"total_churn_pct":8.2,"new_mrr":28213.0,"churned":-42418.0,"ending_mrr":571515.0},{"month":"2024-06","cancel_pct":3.3,"contraction_pct":0.7,"total_churn_pct":4.0,"new_mrr":39052.0,"churned":-18838.0,"ending_mrr":601785.0},{"month":"2024-07","cancel_pct":4.0,"contraction_pct":0.5,"total_churn_pct":4.5,"new_mrr":34645.0,"churned":-23985.0,"ending_mrr":612617.0},{"month":"2024-08","cancel_pct":5.9,"contraction_pct":0.5,"total_churn_pct":6.4,"new_mrr":42079.0,"churned":-36408.0,"ending_mrr":621036.0},{"month":"2024-09","cancel_pct":2.9,"contraction_pct":0.6,"total_churn_pct":3.5,"new_mrr":48132.0,"churned":-18002.0,"ending_mrr":652798.0},{"month":"2024-10","cancel_pct":2.4,"contraction_pct":1.1,"total_churn_pct":3.5,"new_mrr":36165.0,"churned":-15719.0,"ending_mrr":669646.0},{"month":"2024-11","cancel_pct":2.9,"contraction_pct":0.1,"total_churn_pct":3.1,"new_mrr":32493.0,"churned":-19578.0,"ending_mrr":687184.0},{"month":"2024-12","cancel_pct":3.0,"contraction_pct":0.7,"total_churn_pct":3.7,"new_mrr":25175.0,"churned":-20707.0,"ending_mrr":695593.0},{"month":"2025-01","cancel_pct":3.0,"contraction_pct":0.4,"total_churn_pct":3.4,"new_mrr":38001.0,"churned":-20946.0,"ending_mrr":715120.0},{"month":"2025-02","cancel_pct":3.8,"contraction_pct":0.9,"total_churn_pct":4.7,"new_mrr":30371.0,"churned":-26972.0,"ending_mrr":725361.0},{"month":"2025-03","cancel_pct":2.8,"contraction_pct":6.9,"total_churn_pct":9.7,"new_mrr":37954.0,"churned":-20379.0,"ending_mrr":702903.0},{"month":"2025-04","cancel_pct":4.3,"contraction_pct":2.6,"total_churn_pct":6.9,"new_mrr":53280.0,"churned":-30043.0,"ending_mrr":711616.0},{"month":"2025-05","cancel_pct":4.1,"contraction_pct":0.8,"total_churn_pct":5.0,"new_mrr":36016.0,"churned":-29304.0,"ending_mrr":730541.0},{"month":"2025-06","cancel_pct":3.8,"contraction_pct":0.6,"total_churn_pct":4.4,"new_mrr":32670.0,"churned":-27427.0,"ending_mrr":733965.0},{"month":"2025-07","cancel_pct":2.8,"contraction_pct":0.5,"total_churn_pct":3.3,"new_mrr":40935.0,"churned":-20664.0,"ending_mrr":756665.0},{"month":"2025-08","cancel_pct":5.0,"contraction_pct":0.5,"total_churn_pct":5.5,"new_mrr":35862.0,"churned":-37947.0,"ending_mrr":758360.0},{"month":"2025-09","cancel_pct":5.6,"contraction_pct":0.4,"total_churn_pct":6.0,"new_mrr":32774.0,"churned":-42407.0,"ending_mrr":750019.0},{"month":"2025-10","cancel_pct":3.6,"contraction_pct":0.3,"total_churn_pct":3.9,"new_mrr":32119.0,"churned":-26683.0,"ending_mrr":760641.0},{"month":"2025-11","cancel_pct":9.1,"contraction_pct":0.5,"total_churn_pct":9.5,"new_mrr":27289.0,"churned":-69049.0,"ending_mrr":722441.0},{"month":"2025-12","cancel_pct":4.2,"contraction_pct":0.6,"total_churn_pct":4.8,"new_mrr":37840.0,"churned":-30397.0,"ending_mrr":731965.0},{"month":"2026-01","cancel_pct":3.4,"contraction_pct":1.1,"total_churn_pct":4.5,"new_mrr":62175.0,"churned":-25161.0,"ending_mrr":762767.0},{"month":"2026-02","cancel_pct":8.9,"contraction_pct":5.3,"total_churn_pct":14.2,"new_mrr":38257.0,"churned":-67968.0,"ending_mrr":694347.0}],"cohort_retention":[{"cohort":"Pre-2023","m0":380918.0,"retention":[100.0,92.4,90.4,83.3,80.9,76.2,76.6,75.2,71.4,71.5,70.9,67.9,66.8,70.0,68.3,67.1,64.2,63.6,63.5,62.7,62.7,62.9,62.2,62.5,62.9]},{"cohort":"2023-01","m0":20222.0,"retention":[100.0,94.0,91.5,88.7,89.2,80.9,63.0,53.8,54.3,51.1,51.0,49.1,41.6,38.5,27.6,27.5,27.5,27.5,27.5,26.5,24.4,24.4,24.4,24.4,24.4]},{"cohort":"2023-02","m0":15987.0,"retention":[100.0,92.0,90.3,87.4,78.6,71.2,49.8,43.5,42.3,47.2,44.5,42.9,38.9,24.3,24.2,24.2,21.5,21.5,21.5,21.5,21.5,21.5,20.1,19.2,18.6]},{"cohort":"2023-03","m0":28229.0,"retention":[100.0,88.9,88.4,86.2,83.4,76.2,65.1,61.7,61.0,62.7,60.7,58.9,55.0,56.2,55.8,53.4,51.8,37.7,36.6,37.1,37.9,38.0,37.6,35.9,32.3]},{"cohort":"2023-04","m0":21596.0,"retention":[100.0,90.2,85.8,85.0,78.9,75.2,61.7,50.6,48.1,47.2,47.5,45.9,42.8,31.9,27.4,28.1,26.0,26.0,25.0,25.0,25.0,25.0,23.4,23.0,23.0]},{"cohort":"2023-05","m0":27774.0,"retention":[100.0,92.0,90.0,86.2,83.2,78.2,56.7,53.1,46.3,45.4,42.7,37.1,33.8,33.4,30.2,26.6,26.6,26.1,26.1,26.1,24.8,24.8,21.5,21.5,21.5]},{"cohort":"2023-06","m0":25786.0,"retention":[100.0,90.8,87.6,86.7,85.0,82.3,62.4,51.7,49.8,44.0,43.2,45.3,42.6,41.9,41.9,41.9,41.1,40.4,39.9,39.1,39.1,39.1,37.4,37.4,37.4]},{"cohort":"2023-07","m0":23003.0,"retention":[100.0,92.6,88.2,87.6,82.7,75.6,60.9,56.0,48.8,43.3,41.5,38.7,33.4,30.7,30.7,30.7,30.0,29.1,29.1,29.1,28.2,25.1,24.1,20.9,20.9]},{"cohort":"2023-08","m0":34322.0,"retention":[100.0,84.7,83.5,85.8,85.9,85.0,71.6,66.7,65.6,61.8,60.3,58.2,29.5,28.8,28.4,26.4,22.5,21.9,19.1,19.1,18.8,17.6,7.3,7.3,7.3]},{"cohort":"2023-09","m0":28614.0,"retention":[100.0,100.0,99.2,98.1,97.1,95.7,72.6,46.9,46.9,45.6,44.4,43.2,41.1,38.6,37.3,36.5,36.5,36.2,37.1,36.8,37.9,36.4,36.4,38.6,37.3]},{"cohort":"2023-10","m0":39895.0,"retention":[100.0,100.0,100.0,98.3,96.3,92.6,80.1,25.3,22.7,22.2,21.6,20.8,18.9,14.2,12.4,10.1,9.3,8.8,8.3,8.3,8.3,8.0,8.0,7.9,7.9]},{"cohort":"2023-11","m0":35593.0,"retention":[100.0,99.1,94.1,95.7,93.2,89.9,59.1,53.1,52.4,54.9,53.8,52.2,49.6,45.2,43.2,43.2,42.3,39.7,39.4,39.4,39.4,38.5,38.2,37.6,37.6]},{"cohort":"2023-12","m0":23042.0,"retention":[100.0,108.0,113.1,111.9,110.8,138.5,159.0,150.6,148.2,148.2,147.1,145.2,144.2,142.2,139.6,85.9,44.0,51.2,50.2,50.2,50.2,50.6,51.1,51.3,50.9]},{"cohort":"2024-01","m0":25345.0,"retention":[100.0,95.1,95.3,94.2,92.4,87.5,53.7,49.5,40.5,41.2,37.8,37.8,27.6,22.4,18.7,17.4,15.7,14.0,11.9,11.9,10.3,11.1,11.1,10.3,10.3]},{"cohort":"2024-02","m0":35190.0,"retention":[100.0,97.1,96.5,96.7,95.1,91.9,79.7,77.1,75.2,74.0,73.4,71.4,42.2,37.3,39.4,33.3,32.3,28.8,30.2,28.1,27.8,26.4,23.4,23.4,23.8]},{"cohort":"2024-03","m0":22323.0,"retention":[100.0,97.9,97.1,96.1,92.6,85.5,58.0,55.8,54.2,53.8,47.1,46.5,39.8,30.8,28.9,28.3,26.5,26.0,23.9,22.9,20.7,20.4,19.4,18.5,null]},{"cohort":"2024-04","m0":26924.0,"retention":[100.0,99.4,95.1,93.4,90.6,86.5,70.4,60.5,56.5,53.6,53.2,50.3,41.1,33.9,30.5,29.2,28.9,27.6,29.1,29.7,29.7,28.6,28.1,null,null]},{"cohort":"2024-05","m0":26368.0,"retention":[100.0,96.8,89.2,89.0,88.2,89.4,75.2,73.2,73.3,70.7,68.3,66.1,59.0,56.2,54.1,52.8,48.2,45.8,40.2,38.2,38.2,35.6,null,null,null]},{"cohort":"2024-06","m0":36543.0,"retention":[100.0,99.5,101.0,102.1,102.0,101.3,92.9,88.4,87.1,75.7,76.0,72.2,64.5,67.9,65.1,64.3,66.0,69.2,67.9,67.0,68.7,null,null,null,null]},{"cohort":"2024-07","m0":31616.0,"retention":[100.0,81.1,114.3,95.3,94.6,78.2,64.4,59.2,56.6,55.7,54.7,43.4,34.9,30.9,28.0,24.4,23.8,24.3,24.1,13.1,null,null,null,null,null]},{"cohort":"2024-08","m0":37732.0,"retention":[100.0,97.8,95.4,95.4,94.4,92.1,83.2,93.6,83.3,81.6,81.6,81.6,38.3,36.1,33.2,30.9,30.4,29.0,28.6,null,null,null,null,null,null]},{"cohort":"2024-09","m0":33926.0,"retention":[100.0,98.7,99.0,96.8,90.6,117.2,105.2,100.2,98.9,96.0,95.3,93.3,40.3,39.1,35.5,35.5,31.4,30.7,null,null,null,null,null,null,null]},{"cohort":"2024-10","m0":34378.0,"retention":[100.0,99.0,101.1,100.7,99.7,98.1,54.0,47.6,45.2,44.9,41.7,40.2,36.4,33.4,30.8,31.1,30.6,null,null,null,null,null,null,null,null]},{"cohort":"2024-11","m0":28339.0,"retention":[100.0,98.7,97.9,96.8,92.9,88.9,70.4,65.7,65.0,64.5,62.1,58.9,49.9,45.1,41.8,38.9,null,null,null,null,null,null,null,null,null]},{"cohort":"2024-12","m0":21855.0,"retention":[100.0,98.1,98.1,96.0,93.1,85.8,66.2,62.4,59.2,57.0,54.7,54.7,48.8,47.4,44.1,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-01","m0":29755.0,"retention":[100.0,97.1,96.4,94.8,91.6,84.3,57.6,52.9,46.4,44.9,43.0,42.1,39.5,37.2,null,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-02","m0":26934.0,"retention":[100.0,93.7,91.6,90.2,85.0,81.6,59.4,52.5,50.3,47.7,47.7,50.2,40.6,null,null,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-03","m0":32563.0,"retention":[100.0,95.7,85.0,83.4,81.2,77.7,57.9,52.3,45.5,44.6,42.3,41.8,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-04","m0":51220.0,"retention":[100.0,98.4,97.3,96.9,95.5,91.6,83.3,79.8,79.4,78.6,29.0,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-05","m0":32518.0,"retention":[100.0,98.8,96.4,94.8,91.2,89.6,74.1,47.1,86.1,66.9,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-06","m0":28345.0,"retention":[100.0,99.5,96.0,93.4,88.7,78.7,55.8,49.6,46.9,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"cohort":"2025-07","m0":38367.0,"retention":[100.0,100.2,98.4,98.1,90.6,85.7,68.9,65.1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}]};
+
+const fmt=v=>'$'+Math.round(v).toLocaleString();
+const ann = p => p === null || p === undefined ? null : parseFloat((p * 12).toFixed(1));
+
+const fmtK=v=>'$'+(Math.round(v/1000))+'K';
+const pct=v=>v.toFixed(1)+'%';
+const C={blue:'#4f8ef7',green:'#34d399',amber:'#f59e0b',red:'#f87171',purple:'#a78bfa',cyan:'#22d3ee',pink:'#f472b6',lime:'#84cc16'};
+const TC={'Tier 1':C.purple,'Tier 2':C.blue,'Tier 3':C.green,'Tier 4':C.amber,'Multi Specialty':C.pink};
+const RC={'$0-$75':C.purple,'$75-$150':C.blue,'$150-$300':C.green,'$300+':C.amber};
+const CD={responsive:true,animation:{duration:400},plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:12,padding:10}},tooltip:{backgroundColor:'#1a1d27',titleColor:'#e2e8f0',bodyColor:'#94a3b8',borderColor:'#2e3350',borderWidth:1,padding:10}},scales:{x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{color:'#1e2235'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e2235'}}}};
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function buildKPIs(){
+  const last=D.mrr_timeseries[D.mrr_timeseries.length-1];
+  const prev=D.mrr_timeseries[D.mrr_timeseries.length-2];
+  const la=D.active_accounts[D.active_accounts.length-1];
+  const pa=D.active_accounts[D.active_accounts.length-2];
+  const lc=D.churn_rates[D.churn_rates.length-1];
+  const lw=D.waterfall[D.waterfall.length-1];
+  const mrrD=((last.mrr-prev.mrr)/prev.mrr*100).toFixed(1);
+  const profD=la.profiles-pa.profiles;
+  const arpcD=(la.arpc-pa.arpc).toFixed(0);
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="label">Ending MRR (Feb '26)</div><div class="value">${fmtK(last.mrr)}</div><div class="delta ${last.mrr>prev.mrr?'up':'down'}">${mrrD>0?'+':''}${mrrD}% vs prior</div></div>\n    <div class="kpi"><div class="label">Active EP Profiles</div><div class="value">${la.profiles.toLocaleString()}</div><div class="delta ${profD>=0?'up':'down'}">${profD>=0?'+':''}${profD} vs prior</div><div class="sub">${la.accounts.toLocaleString()} accounts</div></div>\n    <div class="kpi"><div class="label">Rev / Profile (EP)</div><div class="value">${fmt(la.arpc)}</div><div class="delta ${arpcD>=0?'up':'down'}">${arpcD>=0?'+':''}$${arpcD} vs prior</div><div class="sub">${fmt(la.arpc_account)}/account</div></div>\n    <div class="kpi"><div class="label">Annual Cancel Rate (Feb '26)</div><div class="value" style="color:var(--negative)">${pct(ann(lc.total_churn_pct))}</div><div class="sub">Annualized (monthly ×12)</div></div>
+    <div class="kpi"><div class="label">New MRR (Feb '26)</div><div class="value" style="color:var(--positive)">${fmtK(lw.new_mrr)}</div><div class="sub">New logo revenue</div></div>\n    <div class="kpi"><div class="label">Churned MRR (Feb '26)</div><div class="value" style="color:var(--negative)">${fmtK(Math.abs(lw.churned))}</div><div class="sub">Full cancellations</div></div>
+    <div class="kpi"><div class="label">Peak Active Profiles</div><div class="value">6,674</div><div class="sub">Oct 2025</div></div>
+  `;
+  const ytd=D.waterfall.filter(d=>d.month.startsWith('2026'));
+  const ytdNew=ytd.reduce((s,d)=>s+d.new_mrr,0);
+  const ytdChurn=ytd.reduce((s,d)=>s+Math.abs(d.churned),0);
+  const wf01=D.waterfall.find(d=>d.month==='2026-01');
+  document.getElementById('mrr-kpis').innerHTML=`
+    <div class="kpi"><div class="label">Starting MRR 2026</div><div class="value">${fmtK(wf01.starting_mrr)}</div></div>
+    <div class="kpi"><div class="label">YTD New MRR</div><div class="value" style="color:var(--positive)">${fmtK(ytdNew)}</div><div class="sub">2 months</div></div>
+    <div class="kpi"><div class="label">YTD Churned</div><div class="value" style="color:var(--negative)">${fmtK(ytdChurn)}</div></div>
+    <div class="kpi"><div class="label">Net MRR YTD</div><div class="value" style="color:var(--negative)">${fmtK(last.mrr-wf01.starting_mrr)}</div></div>
+    <div class="kpi"><div class="label">Avg New MRR/Mo (2025)</div><div class="value">${fmtK(D.waterfall.filter(d=>d.month.startsWith('2025')).reduce((s,d)=>s+d.new_mrr,0)/12)}</div></div>
+    <div class="kpi"><div class="label">Avg Churn/Mo (2025)</div><div class="value">${fmtK(D.waterfall.filter(d=>d.month.startsWith('2025')).reduce((s,d)=>s+Math.abs(d.churned),0)/12)}</div></div>
+  `;
+}
+
+function buildCharts(){
+  const labels=D.mrr_timeseries.map(d=>d.month.slice(2));
+  new Chart(document.getElementById('chart-mrr-main'),{type:'line',data:{labels,datasets:[{label:'MRR',data:D.mrr_timeseries.map(d=>d.mrr),borderColor:C.blue,backgroundColor:'rgba(79,142,247,0.08)',borderWidth:2,fill:true,tension:0.3,pointRadius:2}]},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{...CD.scales.y.ticks,callback:v=>fmtK(v)}}}}});
+  const wf12=D.waterfall.slice(-13);
+  new Chart(document.getElementById('chart-waterfall-bar'),{type:'bar',data:{labels:wf12.map(d=>d.month.slice(2)),datasets:[{label:'New MRR',data:wf12.map(d=>d.new_mrr),backgroundColor:C.green},{label:'Expansion',data:wf12.map(d=>d.expansion),backgroundColor:C.blue},{label:'Contraction',data:wf12.map(d=>d.contraction),backgroundColor:C.amber},{label:'Churn',data:wf12.map(d=>d.churned),backgroundColor:C.red}]},options:{...CD,scales:{x:{...CD.scales.x,stacked:true},y:{...CD.scales.y,stacked:true,ticks:{callback:v=>fmtK(v)}}}}});
+  new Chart(document.getElementById('chart-churn-line'),{type:'line',data:{labels:D.churn_rates.map(d=>d.month.slice(2)),datasets:[{label:'Annual Total Churn %',data:D.churn_rates.map(d=>ann(d.total_churn_pct)),borderColor:C.red,borderWidth:2,tension:0.3,pointRadius:2,fill:false},{label:'Annual Cancel Only %',data:D.churn_rates.map(d=>ann(d.cancel_pct)),borderColor:C.amber,borderWidth:1.5,tension:0.3,pointRadius:2,borderDash:[4,3],fill:false}]},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{callback:v=>v+'%'}}}}});
+  new Chart(document.getElementById('chart-accounts'),{type:'bar',data:{labels:D.active_accounts.map(d=>d.month.slice(2)),datasets:[{label:'Active EP Profiles',data:D.active_accounts.map(d=>d.profiles),backgroundColor:C.cyan+'99',borderColor:C.cyan,borderWidth:1},{label:'Accounts',data:D.active_accounts.map(d=>d.accounts),backgroundColor:'rgba(255,255,255,0.08)',borderColor:'#94a3b8',borderWidth:1,type:'line',pointRadius:0}]},options:{...CD}});
+  new Chart(document.getElementById('chart-arpc'),{type:'line',data:{labels:D.active_accounts.map(d=>d.month.slice(2)),datasets:[{label:'Rev / Profile',data:D.active_accounts.map(d=>d.arpc),borderColor:C.purple,backgroundColor:'rgba(167,139,250,0.08)',borderWidth:2,tension:0.3,fill:true,pointRadius:2},{label:'Rev / Account',data:D.active_accounts.map(d=>d.arpc_account),borderColor:C.amber,borderWidth:1.5,tension:0.3,fill:false,pointRadius:0,borderDash:[4,3]}]},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{callback:v=>'$'+v}}}}});
+  new Chart(document.getElementById('chart-wf-stacked'),{type:'bar',data:{labels:D.waterfall.map(d=>d.month.slice(2)),datasets:[{label:'New',data:D.waterfall.map(d=>d.new_mrr),backgroundColor:C.green},{label:'Expansion',data:D.waterfall.map(d=>d.expansion),backgroundColor:C.blue},{label:'Contraction',data:D.waterfall.map(d=>d.contraction),backgroundColor:C.amber},{label:'Churned',data:D.waterfall.map(d=>d.churned),backgroundColor:C.red}]},options:{...CD,scales:{x:{...CD.scales.x,stacked:true},y:{...CD.scales.y,stacked:true,ticks:{callback:v=>fmtK(v)}}}}});
+  new Chart(document.getElementById('chart-by-product'),{type:'line',data:{labels,datasets:[{label:'EP',data:D.revenue_by_product.EP.map(d=>d.revenue),borderColor:C.blue,backgroundColor:'rgba(79,142,247,0.07)',fill:true,tension:0.3,borderWidth:2,pointRadius:2},{label:'RepMn',data:D.revenue_by_product.RepMn.map(d=>d.revenue),borderColor:C.amber,tension:0.3,borderWidth:2,pointRadius:2,fill:false},{label:'Telemed',data:D.revenue_by_product.Telemed.map(d=>d.revenue),borderColor:C.green,tension:0.3,borderWidth:2,pointRadius:2,fill:false}]},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{callback:v=>fmtK(v)}}}}});
+  new Chart(document.getElementById('chart-by-tier'),{type:'line',data:{labels,datasets:Object.entries(D.revenue_by_tier).map(([t,v])=>({label:t,data:v.map(d=>d.revenue),borderColor:TC[t],borderWidth:2,tension:0.3,pointRadius:1,fill:false}))},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{callback:v=>fmtK(v)}}}}});
+  new Chart(document.getElementById('chart-by-range'),{type:'line',data:{labels,datasets:Object.entries(D.revenue_by_range).map(([r,v])=>({label:r,data:v.map(d=>d.revenue),borderColor:RC[r],borderWidth:2,tension:0.3,pointRadius:1,fill:false}))},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{callback:v=>fmtK(v)}}}}});
+  new Chart(document.getElementById('chart-by-type'),{type:'line',data:{labels,datasets:[{label:'Enterprise',data:D.revenue_by_type.Enterprise.map(d=>d.revenue),borderColor:C.purple,borderWidth:2,tension:0.3,pointRadius:1,fill:false},{label:'Non-Enterprise',data:D.revenue_by_type['Non-Enterprise'].map(d=>d.revenue),borderColor:C.cyan,borderWidth:2,tension:0.3,pointRadius:1,fill:false}]},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,ticks:{callback:v=>fmtK(v)}}}}});
+  const aopsD=D.top_aops.filter(a=>a.aop!=='Pediatric Orthopedics').slice(0,15);
+  new Chart(document.getElementById('chart-aops'),{
+  type:'bar',
+  data:{
+    labels:aopsD.map(a=>a.aop),
+    datasets:[
+      {
+        label:'6M Revenue',
+        data:aopsD.map(a=>a.revenue_6m),
+        backgroundColor:C.blue+'cc',
+        xAxisID:'xRev',
+        barThickness:14
+      },
+      {
+        label:'$/Profile/Mo',
+        data:aopsD.map(a=>a.arpc),
+        type:'bar',
+        backgroundColor:C.amber+'bb',
+        xAxisID:'xArpc',
+        barThickness:6
+      }
+    ]
+  },
+  options:{
+    ...CD,
+    indexAxis:'y',
+    scales:{
+      y:{...CD.scales.y,ticks:{color:'#94a3b8',font:{size:10}}},
+      xRev:{
+        position:'top',
+        ticks:{color:'#64748b',font:{size:10},callback:v=>fmtK(v)},
+        grid:{color:'#1e2235'},
+        title:{display:true,text:'6M Revenue',color:'#4f8ef7',font:{size:10}}
+      },
+      xArpc:{
+        position:'bottom',
+        ticks:{color:C.amber,font:{size:10},callback:v=>'$'+v},
+        grid:{display:false},
+        title:{display:true,text:'$/Profile/Mo',color:C.amber,font:{size:10}}
+      }
+    }
+  }
+});
+}
+
+function buildTables(){
+  const tb=document.getElementById('mrr-table-body');
+  D.waterfall.slice(1).forEach(d=>{
+    const net=d.ending_mrr-d.starting_mrr;
+    const cpRaw=d.total_churn_pct||0; const cp=cpRaw?(cpRaw*12).toFixed(1)+'%':'-';
+    const r=document.createElement('tr');
+    r.innerHTML=`<td>${d.month}</td><td class="num">${fmt(d.starting_mrr)}</td><td class="num" style="color:var(--positive)">+${fmt(d.new_mrr)}</td><td class="num" style="color:var(--accent)">+${fmt(d.expansion)}</td><td class="num" style="color:var(--accent3)">${fmt(d.contraction)}</td><td class="num" style="color:var(--negative)">${fmt(d.churned)}</td><td class="num"><strong>${fmt(d.ending_mrr)}</strong></td><td class="num" style="color:${net>=0?'var(--positive)':'var(--negative)'}">${net>=0?'+':''}${fmt(net)}</td><td class="num" style="color:${parseFloat(cp)>6?'var(--negative)':'var(--text2)'}">${cp}%</td>`;
+    tb.appendChild(r);
+  });
+  const totalRev=D.arpc_by_tier.reduce((s,d)=>s+d.revenue,0);
+  const tierColors={'Tier 1':'badge-t1','Tier 2':'badge-t2','Tier 3':'badge-t3','Tier 4':'badge-t4','Multi Specialty':'badge-ms'};
+  const tierTb=document.getElementById('tier-table-body');
+  D.arpc_by_tier.forEach(d=>{
+    const share=(d.revenue/totalRev*100).toFixed(1);
+    const r=document.createElement('tr');
+    r.innerHTML=`<td><span class="badge ${tierColors[d.tier]}">${d.tier}</span></td><td class="num">${d.profiles.toLocaleString()}</td><td class="num">${d.accounts.toLocaleString()}</td><td class="num">${fmt(d.revenue)}</td><td class="num"><strong>${fmt(d.arpc)}</strong></td><td class="num">${fmt(d.arpc_account)}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:${Math.round(parseFloat(share)*3)}px;height:6px;background:${TC[d.tier]||C.blue};border-radius:3px;max-width:120px"></div><span style="color:var(--text2)">${share}%</span></div></td>`;
+    tierTb.appendChild(r);
+  });
+  const totalRevR=D.arpc_by_range.reduce((s,d)=>s+d.revenue,0);
+  const rangeTb=document.getElementById('range-table-body');
+  D.arpc_by_range.forEach(d=>{
+    const share=(d.revenue/totalRevR*100).toFixed(1);
+    const r=document.createElement('tr');
+    r.innerHTML=`<td><span class="badge" style="background:${RC[d.range]}22;color:${RC[d.range]}">${d.range}</span></td><td class="num">${d.profiles.toLocaleString()}</td><td class="num">${d.accounts.toLocaleString()}</td><td class="num">${fmt(d.revenue)}</td><td class="num"><strong>${fmt(d.arpc)}</strong></td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:${Math.round(parseFloat(share)*2)}px;height:6px;background:${RC[d.range]};border-radius:3px;max-width:120px"></div><span style="color:var(--text2)">${share}%</span></div></td>`;
+    rangeTb.appendChild(r);
+  });
+  const aopTb=document.getElementById('aop-table-body');
+  D.top_aops.forEach((d,i)=>{
+    const r=document.createElement('tr');
+    r.innerHTML=`<td style="color:var(--text3)">${i+1}</td><td><strong>${d.aop}</strong></td><td class="num">${fmt(d.revenue_6m)}</td><td class="num">${d.profiles.toLocaleString()}</td><td class="num">${d.accounts.toLocaleString()}</td><td class="num" style="color:${d.arpc>150?'var(--positive)':'var(--text)'}">${fmt(d.arpc)}</td>`;
+    aopTb.appendChild(r);
+  });
+}
+
+function getColor(v){
+  if(v===null)return'transparent';
+  if(v>150)return'rgba(167,139,250,0.4)';
+  if(v>=100)return'rgba(52,211,153,0.35)';
+  if(v>=80)return'rgba(52,211,153,0.2)';
+  if(v>=60)return'rgba(245,158,11,0.25)';
+  if(v>=40)return'rgba(248,113,113,0.2)';
+  if(v>=20)return'rgba(248,113,113,0.35)';
+  return'rgba(248,113,113,0.5)';
+}
+
+function renderCohorts(){
+  const f=document.getElementById('cohort-from').value;
+  let cohorts=D.cohort_retention;
+  if(f==='2023')cohorts=cohorts.filter(c=>c.cohort.startsWith('2023')||c.cohort==='Pre-2023');
+  else if(f==='2024')cohorts=cohorts.filter(c=>c.cohort.startsWith('2024')||c.cohort.startsWith('2025'));
+  else if(f==='2025')cohorts=cohorts.filter(c=>c.cohort.startsWith('2025'));
+  const maxM=13;
+  let html='<table><thead><tr><th>Cohort</th><th>Initial $</th>';
+  for(let m=0;m<maxM;m++)html+=`<th>M${m}</th>`;
+  html+='</tr></thead><tbody>';
+  cohorts.forEach(c=>{
+    html+=`<tr><td style="color:var(--text2);white-space:nowrap;padding:4px 8px;font-weight:600">${c.cohort}</td><td style="color:var(--text3);white-space:nowrap;padding:4px 8px">${fmtK(c.m0)}</td>`;
+    for(let m=0;m<maxM;m++){
+      const v=c.retention[m];
+      const dv=v!==null?Math.round(v)+'%':'';
+      html+=`<td style="background:${getColor(v)};color:${v!==null?'var(--text)':'transparent'}">${dv}</td>`;
+    }
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('cohort-heatmap').innerHTML=html;
+  const avg=[];
+  for(let m=0;m<maxM;m++){
+    const vals=cohorts.map(c=>c.retention[m]).filter(v=>v!==null&&v<=150);
+    avg.push(vals.length>0?vals.reduce((a,b)=>a+b,0)/vals.length:null);
+  }
+  if(window.retChart)window.retChart.destroy();
+  window.retChart=new Chart(document.getElementById('chart-retention-avg'),{type:'line',data:{labels:avg.map((_,i)=>'M'+i),datasets:[{label:'Avg Retention %',data:avg,borderColor:C.blue,backgroundColor:'rgba(79,142,247,0.08)',borderWidth:2.5,fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:C.blue}]},options:{...CD,scales:{x:CD.scales.x,y:{...CD.scales.y,min:0,max:110,ticks:{callback:v=>v+'%'}}}}});
+}
+
+const CD2 = {"contacts_ts":[{"month":"2022-12","contacts":14802,"revenue":382163.0,"dpc":25.82,"contacts_per_profile":5.11,"cancel_pct":null},{"month":"2023-01","contacts":19027,"revenue":372096.0,"dpc":19.56,"contacts_per_profile":6.87,"cancel_pct":4.6},{"month":"2023-02","contacts":16673,"revenue":379517.0,"dpc":22.76,"contacts_per_profile":5.78,"cancel_pct":7.22},{"month":"2023-03","contacts":19440,"revenue":378732.0,"dpc":19.48,"contacts_per_profile":7.01,"cancel_pct":8.63},{"month":"2023-04","contacts":17089,"revenue":387081.0,"dpc":22.65,"contacts_per_profile":5.95,"cancel_pct":4.73},{"month":"2023-05","contacts":19526,"revenue":394649.0,"dpc":20.21,"contacts_per_profile":7.08,"cancel_pct":8.1},{"month":"2023-06","contacts":19284,"revenue":414927.0,"dpc":21.52,"contacts_per_profile":6.34,"cancel_pct":6.34},{"month":"2023-07","contacts":19718,"revenue":423691.0,"dpc":21.49,"contacts_per_profile":6.09,"cancel_pct":4.91},{"month":"2023-08","contacts":22821,"revenue":431518.0,"dpc":18.91,"contacts_per_profile":7.1,"cancel_pct":3.89},{"month":"2023-09","contacts":22168,"revenue":448494.0,"dpc":20.23,"contacts_per_profile":6.57,"cancel_pct":4.51},{"month":"2023-10","contacts":22831,"revenue":478775.0,"dpc":20.97,"contacts_per_profile":5.94,"cancel_pct":3.25},{"month":"2023-11","contacts":21377,"revenue":493989.0,"dpc":23.11,"contacts_per_profile":5.32,"cancel_pct":5.92},{"month":"2023-12","contacts":18016,"revenue":503463.0,"dpc":27.95,"contacts_per_profile":4.36,"cancel_pct":3.91},{"month":"2024-01","contacts":23127,"revenue":529320.0,"dpc":22.89,"contacts_per_profile":5.15,"cancel_pct":3.73},{"month":"2024-02","contacts":21896,"revenue":549002.0,"dpc":25.07,"contacts_per_profile":4.68,"cancel_pct":4.14},{"month":"2024-03","contacts":22264,"revenue":545358.0,"dpc":24.5,"contacts_per_profile":4.77,"cancel_pct":4.46},{"month":"2024-04","contacts":23353,"revenue":542315.0,"dpc":23.22,"contacts_per_profile":5.03,"cancel_pct":4.08},{"month":"2024-05","contacts":24142,"revenue":534712.0,"dpc":22.15,"contacts_per_profile":5.3,"cancel_pct":7.32},{"month":"2024-06","contacts":24212,"revenue":564104.0,"dpc":23.3,"contacts_per_profile":5.09,"cancel_pct":3.3},{"month":"2024-07","contacts":24015,"revenue":573484.0,"dpc":23.88,"contacts_per_profile":4.95,"cancel_pct":3.99},{"month":"2024-08","contacts":29721,"revenue":581571.0,"dpc":19.57,"contacts_per_profile":6.0,"cancel_pct":5.94},{"month":"2024-09","contacts":21909,"revenue":613474.0,"dpc":28.0,"contacts_per_profile":4.17,"cancel_pct":2.9},{"month":"2024-10","contacts":21900,"revenue":630223.0,"dpc":28.78,"contacts_per_profile":4.06,"cancel_pct":2.41},{"month":"2024-11","contacts":20288,"revenue":646445.0,"dpc":31.86,"contacts_per_profile":3.68,"cancel_pct":2.92},{"month":"2024-12","contacts":18228,"revenue":654278.0,"dpc":35.89,"contacts_per_profile":3.21,"cancel_pct":3.01},{"month":"2025-01","contacts":24886,"revenue":674058.0,"dpc":27.09,"contacts_per_profile":4.2,"cancel_pct":3.01},{"month":"2025-02","contacts":21995,"revenue":683210.0,"dpc":31.06,"contacts_per_profile":3.66,"cancel_pct":3.77},{"month":"2025-03","contacts":21846,"revenue":656772.0,"dpc":30.06,"contacts_per_profile":3.83,"cancel_pct":2.81},{"month":"2025-04","contacts":18766,"revenue":664971.0,"dpc":35.43,"contacts_per_profile":3.15,"cancel_pct":4.27},{"month":"2025-05","contacts":19358,"revenue":685134.0,"dpc":35.39,"contacts_per_profile":3.06,"cancel_pct":4.12},{"month":"2025-06","contacts":16059,"revenue":687200.0,"dpc":42.79,"contacts_per_profile":2.53,"cancel_pct":3.75},{"month":"2025-07","contacts":15745,"revenue":709846.0,"dpc":45.08,"contacts_per_profile":2.4,"cancel_pct":2.82},{"month":"2025-08","contacts":18137,"revenue":711598.0,"dpc":39.23,"contacts_per_profile":2.79,"cancel_pct":5.02},{"month":"2025-09","contacts":21972,"revenue":703493.0,"dpc":32.02,"contacts_per_profile":3.4,"cancel_pct":5.59},{"month":"2025-10","contacts":23731,"revenue":711885.0,"dpc":30.0,"contacts_per_profile":3.56,"cancel_pct":3.56},{"month":"2025-11","contacts":18898,"revenue":672027.0,"dpc":35.56,"contacts_per_profile":3.13,"cancel_pct":9.08},{"month":"2025-12","contacts":18293,"revenue":678638.0,"dpc":37.1,"contacts_per_profile":2.94,"cancel_pct":4.21},{"month":"2026-01","contacts":21847,"revenue":708718.0,"dpc":32.44,"contacts_per_profile":3.37,"cancel_pct":3.44}],"scatter":[{"month":"2023-01","contacts":19027,"cpp":6.87,"cancel_pct":4.6,"dpc":19.56},{"month":"2023-02","contacts":16673,"cpp":5.78,"cancel_pct":7.22,"dpc":22.76},{"month":"2023-03","contacts":19440,"cpp":7.01,"cancel_pct":8.63,"dpc":19.48},{"month":"2023-04","contacts":17089,"cpp":5.95,"cancel_pct":4.73,"dpc":22.65},{"month":"2023-05","contacts":19526,"cpp":7.08,"cancel_pct":8.1,"dpc":20.21},{"month":"2023-06","contacts":19284,"cpp":6.34,"cancel_pct":6.34,"dpc":21.52},{"month":"2023-07","contacts":19718,"cpp":6.09,"cancel_pct":4.91,"dpc":21.49},{"month":"2023-08","contacts":22821,"cpp":7.1,"cancel_pct":3.89,"dpc":18.91},{"month":"2023-09","contacts":22168,"cpp":6.57,"cancel_pct":4.51,"dpc":20.23},{"month":"2023-10","contacts":22831,"cpp":5.94,"cancel_pct":3.25,"dpc":20.97},{"month":"2023-11","contacts":21377,"cpp":5.32,"cancel_pct":5.92,"dpc":23.11},{"month":"2023-12","contacts":18016,"cpp":4.36,"cancel_pct":3.91,"dpc":27.95},{"month":"2024-01","contacts":23127,"cpp":5.15,"cancel_pct":3.73,"dpc":22.89},{"month":"2024-02","contacts":21896,"cpp":4.68,"cancel_pct":4.14,"dpc":25.07},{"month":"2024-03","contacts":22264,"cpp":4.77,"cancel_pct":4.46,"dpc":24.5},{"month":"2024-04","contacts":23353,"cpp":5.03,"cancel_pct":4.08,"dpc":23.22},{"month":"2024-05","contacts":24142,"cpp":5.3,"cancel_pct":7.32,"dpc":22.15},{"month":"2024-06","contacts":24212,"cpp":5.09,"cancel_pct":3.3,"dpc":23.3},{"month":"2024-07","contacts":24015,"cpp":4.95,"cancel_pct":3.99,"dpc":23.88},{"month":"2024-08","contacts":29721,"cpp":6.0,"cancel_pct":5.94,"dpc":19.57},{"month":"2024-09","contacts":21909,"cpp":4.17,"cancel_pct":2.9,"dpc":28.0},{"month":"2024-10","contacts":21900,"cpp":4.06,"cancel_pct":2.41,"dpc":28.78},{"month":"2024-11","contacts":20288,"cpp":3.68,"cancel_pct":2.92,"dpc":31.86},{"month":"2024-12","contacts":18228,"cpp":3.21,"cancel_pct":3.01,"dpc":35.89},{"month":"2025-01","contacts":24886,"cpp":4.2,"cancel_pct":3.01,"dpc":27.09},{"month":"2025-02","contacts":21995,"cpp":3.66,"cancel_pct":3.77,"dpc":31.06},{"month":"2025-03","contacts":21846,"cpp":3.83,"cancel_pct":2.81,"dpc":30.06},{"month":"2025-04","contacts":18766,"cpp":3.15,"cancel_pct":4.27,"dpc":35.43},{"month":"2025-05","contacts":19358,"cpp":3.06,"cancel_pct":4.12,"dpc":35.39},{"month":"2025-06","contacts":16059,"cpp":2.53,"cancel_pct":3.75,"dpc":42.79},{"month":"2025-07","contacts":15745,"cpp":2.4,"cancel_pct":2.82,"dpc":45.08},{"month":"2025-08","contacts":18137,"cpp":2.79,"cancel_pct":5.02,"dpc":39.23},{"month":"2025-09","contacts":21972,"cpp":3.4,"cancel_pct":5.59,"dpc":32.02},{"month":"2025-10","contacts":23731,"cpp":3.56,"cancel_pct":3.56,"dpc":30.0},{"month":"2025-11","contacts":18898,"cpp":3.13,"cancel_pct":9.08,"dpc":35.56},{"month":"2025-12","contacts":18293,"cpp":2.94,"cancel_pct":4.21,"dpc":37.1},{"month":"2026-01","contacts":21847,"cpp":3.37,"cancel_pct":3.44,"dpc":32.44}],"dpc_by_tier":[{"segment":"Tier 1","contacts":186,"profiles":160,"revenue":16545.0,"dpc":88.95,"cpp":1.16},{"segment":"Tier 2","contacts":1582,"profiles":352,"revenue":69920.0,"dpc":44.2,"cpp":4.49},{"segment":"Tier 3","contacts":19584,"profiles":4638,"revenue":546203.0,"dpc":27.89,"cpp":4.22},{"segment":"Tier 4","contacts":495,"profiles":337,"revenue":23580.0,"dpc":47.64,"cpp":1.47}],"dpc_by_range":[{"segment":"$0-$75","contacts":242,"profiles":1856,"revenue":91029.0,"dpc":376.15,"cpp":0.13},{"segment":"$75-$150","contacts":4606,"profiles":2754,"revenue":269383.0,"dpc":58.49,"cpp":1.67},{"segment":"$150-$300","contacts":16247,"profiles":1826,"revenue":336296.0,"dpc":20.7,"cpp":8.9},{"segment":"$300+","contacts":752,"profiles":41,"revenue":12010.0,"dpc":15.97,"cpp":18.34}],"dpc_by_type":[{"segment":"Enterprise","contacts":0,"profiles":3690,"revenue":249751.0,"dpc":0,"cpp":0.0},{"segment":"Non-Enterprise","contacts":21847,"profiles":2787,"revenue":458967.0,"dpc":21.01,"cpp":7.84}],"dpc_by_aop":[{"aop":"Psychiatry","contacts":2539,"profiles":1366,"revenue":141695.0,"dpc":55.81},{"aop":"Family Medicine/Internal Medicine","contacts":3780,"profiles":1105,"revenue":107525.0,"dpc":28.45},{"aop":"Orthopaedic Surgery","contacts":1481,"profiles":273,"revenue":44209.0,"dpc":29.85},{"aop":"Primary Care","contacts":1320,"profiles":251,"revenue":30346.0,"dpc":22.99},{"aop":"Dermatology","contacts":2489,"profiles":155,"revenue":24417.0,"dpc":9.81},{"aop":"Sports Medicine","contacts":112,"profiles":262,"revenue":24185.0,"dpc":215.94},{"aop":"Pain Management","contacts":401,"profiles":116,"revenue":18413.0,"dpc":45.92},{"aop":"General Dentistry","contacts":226,"profiles":222,"revenue":17041.0,"dpc":75.4},{"aop":"Plastic Surgery","contacts":615,"profiles":64,"revenue":16155.0,"dpc":26.27},{"aop":"Psychology","contacts":1029,"profiles":95,"revenue":15891.0,"dpc":15.44},{"aop":"Vascular Surgery","contacts":86,"profiles":97,"revenue":15432.0,"dpc":179.44},{"aop":"Oncology","contacts":89,"profiles":150,"revenue":14116.0,"dpc":158.61},{"aop":"Chiropractor","contacts":319,"profiles":247,"revenue":13712.0,"dpc":42.98},{"aop":"Ophthalmology","contacts":532,"profiles":87,"revenue":13050.0,"dpc":24.53},{"aop":"OB/GYN","contacts":751,"profiles":76,"revenue":13032.0,"dpc":17.35},{"aop":"Gastroenterology","contacts":489,"profiles":113,"revenue":12405.0,"dpc":25.37},{"aop":"Podiatry","contacts":491,"profiles":71,"revenue":12091.0,"dpc":24.63},{"aop":"Addiction Medicine","contacts":177,"profiles":47,"revenue":8975.0,"dpc":50.71},{"aop":"General Surgery","contacts":33,"profiles":38,"revenue":8589.0,"dpc":260.27},{"aop":"Neurological Surgery","contacts":240,"profiles":42,"revenue":7651.0,"dpc":31.88}]};
+
+
+function buildContactsKPIs() {
+  const ts = CD2.contacts_ts;
+  const last = ts[ts.length - 1];
+  const prev = ts[ts.length - 2];
+  const peak = ts.reduce((a,b) => b.contacts > a.contacts ? b : a);
+  const lastDPC = last.dpc || 0;
+  const prevDPC = prev.dpc || 0;
+  const dpcDelta = (lastDPC - prevDPC).toFixed(2);
+  const contactDelta = last.contacts - prev.contacts;
+
+  // avg DPC last 6 months
+  const last6 = ts.slice(-6).filter(d=>d.dpc);
+  const avgDPC = last6.reduce((s,d)=>s+d.dpc,0)/last6.length;
+
+  document.getElementById('contacts-kpis').innerHTML = `
+    <div class="kpi"><div class="label">Contacts (Jan '26)</div><div class="value">${last.contacts.toLocaleString()}</div><div class="delta ${contactDelta>=0?'up':'down'}">${contactDelta>=0?'+':''}${contactDelta.toLocaleString()} vs prior</div></div>\n    <div class="kpi"><div class="label">DPC — Jan '26</div><div class="value">$${lastDPC.toFixed(2)}</div><div class="delta ${dpcDelta>=0?'down':'up'}">${dpcDelta>=0?'▲':'▼'}$${Math.abs(dpcDelta)} vs prior</div><div class="sub">Higher DPC = fewer contacts per $</div></div>
+    <div class="kpi"><div class="label">Avg DPC (last 6 mo)</div><div class="value">$${avgDPC.toFixed(2)}</div><div class="sub">vs $21–24 in 2023-24</div></div>
+    <div class="kpi"><div class="label">Peak Contacts</div><div class="value">${peak.contacts.toLocaleString()}</div><div class="sub">${peak.month}</div></div>
+    <div class="kpi"><div class="label">Contact Decline</div><div class="value" style="color:var(--negative)">−45%</div><div class="sub">Peak → Jun/Jul 2025</div></div>
+    <div class="kpi"><div class="label">Correlation (cpp vs ann. total churn)</div><div class="value">+0.40</div><div class="sub">Moderate positive — see analysis</div></div>
+  `;
+}
+
+function buildContactsCharts() {
+  const ts = CD2.contacts_ts;
+  const labels = ts.map(d => d.month.slice(2));
+
+  // Contacts timeseries + DPC dual axis
+  new Chart(document.getElementById('chart-contacts-ts'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Contacts', data: ts.map(d=>d.contacts), backgroundColor: C.cyan+'99', borderColor: C.cyan, borderWidth: 1, yAxisID: 'yContacts' },
+        { label: 'DPC ($)', data: ts.map(d=>d.dpc), type: 'line', borderColor: C.amber, backgroundColor: 'transparent', borderWidth: 2, pointRadius: 2, tension: 0.3, yAxisID: 'yDPC' }
+      ]
+    },
+    options: { ...CD, scales: {
+      x: CD.scales.x,
+      yContacts: { position: 'left', ticks: { color: C.cyan, font: {size:10}, callback: v => v.toLocaleString() }, grid: { color: '#1e2235' }, title: { display: true, text: 'Contacts', color: C.cyan, font: {size:10} } },
+      yDPC: { position: 'right', ticks: { color: C.amber, font: {size:10}, callback: v => '$'+v }, grid: { display: false }, title: { display: true, text: 'DPC ($)', color: C.amber, font: {size:10} } }
+    }}
+  });
+
+  // Contacts/profile vs cancel rate dual line
+  const churnLookup = {};
+  D.churn_rates.forEach(d => { churnLookup[d.month] = d.total_churn_pct; });
+  const tsWithChurn = ts.map(d => ({...d, total_churn_pct: churnLookup[d.month] || null}));
+  const validTs = tsWithChurn.filter(d => d.contacts_per_profile && d.total_churn_pct);
+  new Chart(document.getElementById('chart-cpp-churn'), {
+    type: 'line',
+    data: {
+      labels: validTs.map(d => d.month.slice(2)),
+      datasets: [
+        { label: 'Contacts/Profile', data: validTs.map(d=>d.contacts_per_profile), borderColor: C.cyan, backgroundColor: 'rgba(34,211,238,0.07)', fill: true, borderWidth: 2, tension: 0.3, pointRadius: 2, yAxisID: 'yCPP' },
+        { label: 'Annual Total Churn %', data: validTs.map(d=>ann(d.total_churn_pct)), borderColor: C.red, backgroundColor: 'transparent', borderWidth: 2, tension: 0.3, pointRadius: 2, borderDash: [4,3], yAxisID: 'yChurn' }
+      ]
+    },
+    options: { ...CD, scales: {
+      x: CD.scales.x,
+      yCPP: { position: 'left', ticks: { color: C.cyan, font: {size:10}, callback: v => v.toFixed(1) }, grid: { color: '#1e2235' }, title: { display: true, text: 'Contacts/Profile', color: C.cyan, font: {size:10} } },
+      yChurn: { position: 'right', ticks: { color: C.red, font: {size:10}, callback: v => v+'%' }, grid: { display: false }, title: { display: true, text: 'Cancel %', color: C.red, font: {size:10} } }
+    }}
+  });
+
+  // Scatter: contacts/profile vs churn
+  const scatterData = CD2.scatter.map(d => ({ x: d.cpp, y: ann(churnLookup[d.month]||d.cancel_pct), month: d.month }));
+  // Add trend line
+  const xs = scatterData.map(d=>d.x), ys = scatterData.map(d=>d.y);
+  const n = xs.length;
+  const sx = xs.reduce((a,b)=>a+b,0), sy = ys.reduce((a,b)=>a+b,0);
+  const sxy = xs.reduce((a,b,i)=>a+b*ys[i],0), sx2 = xs.reduce((a,b)=>a+b*b,0);
+  const slope = (n*sxy - sx*sy)/(n*sx2 - sx*sx);
+  const intercept = (sy - slope*sx)/n;
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const trendData = [{x:xMin, y:intercept+slope*xMin},{x:xMax, y:intercept+slope*xMax}];
+
+  new Chart(document.getElementById('chart-scatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Monthly data point',
+          data: scatterData,
+          backgroundColor: C.blue + '99',
+          borderColor: C.blue,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        },
+        {
+          label: 'Trend line (r=+0.40)',
+          data: trendData,
+          type: 'line',
+          borderColor: C.amber,
+          borderWidth: 2,
+          borderDash: [5,4],
+          pointRadius: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      ...CD,
+      plugins: {
+        ...CD.plugins,
+        tooltip: {
+          ...CD.plugins.tooltip,
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return d.month ? `${d.month}: ${d.x?.toFixed(1)} contacts/prof, ${d.y?.toFixed(1)}% ann. total churn` : `(${d.x?.toFixed(1)}, ${d.y?.toFixed(1)})%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ...CD.scales.x, title: { display: true, text: 'Contacts per Profile', color: '#94a3b8', font:{size:11} }, ticks: { color: '#64748b', font:{size:10} } },
+        y: { ...CD.scales.y, title: { display: true, text: 'Annual Cancel Rate (%)', color: '#94a3b8', font:{size:11} }, ticks: { color: '#64748b', font:{size:10}, callback: v => v+'%' } }
+      }
+    }
+  });
+
+  // DPC by segment grouped bar
+  const tierData = CD2.dpc_by_tier;
+  const rangeData = CD2.dpc_by_range;
+  const segLabels = [...tierData.map(d=>d.segment), ...rangeData.map(d=>d.segment)];
+  const segDPC = [...tierData.map(d=>d.dpc), ...rangeData.map(d=>d.dpc)];
+  const segCPP = [...tierData.map(d=>d.cpp), ...rangeData.map(d=>d.cpp)];
+  const segColors = [C.purple, C.blue, C.green, C.amber, C.purple+'99', C.blue+'99', C.green+'99', C.amber+'99'];
+
+  new Chart(document.getElementById('chart-dpc-seg'), {
+    type: 'bar',
+    data: {
+      labels: segLabels,
+      datasets: [
+        { label: 'DPC ($)', data: segDPC, backgroundColor: segColors, yAxisID: 'yDPC' },
+        { label: 'Contacts/Profile', data: segCPP, type: 'line', borderColor: C.cyan, backgroundColor:'transparent', borderWidth: 2, pointRadius: 4, pointBackgroundColor: C.cyan, yAxisID: 'yCPP' }
+      ]
+    },
+    options: { ...CD, scales: {
+      x: { ...CD.scales.x, ticks: { color:'#94a3b8', font:{size:10}, maxRotation:35 } },
+      yDPC: { position: 'left', ticks: { color: C.amber, font:{size:10}, callback: v=>'$'+v }, grid:{color:'#1e2235'}, title:{display:true,text:'DPC ($)',color:C.amber,font:{size:10}} },
+      yCPP: { position: 'right', ticks: { color: C.cyan, font:{size:10} }, grid:{display:false}, title:{display:true,text:'Contacts/Profile',color:C.cyan,font:{size:10}} }
+    }}
+  });
+
+  // DPC by AOP horizontal bar
+  const aopData = CD2.dpc_by_aop.slice(0,15);
+  new Chart(document.getElementById('chart-dpc-aop'), {
+    type: 'bar',
+    data: {
+      labels: aopData.map(d=>d.aop),
+      datasets: [
+        { label: 'DPC ($)', data: aopData.map(d=>d.dpc), backgroundColor: C.green+'cc', xAxisID: 'xDPC' },
+        { label: 'Contacts', data: aopData.map(d=>d.contacts), type: 'bar', backgroundColor: C.blue+'55', xAxisID: 'xContacts' }
+      ]
+    },
+    options: { ...CD, indexAxis: 'y', scales: {
+      y: { ...CD.scales.y, ticks:{color:'#94a3b8',font:{size:10}} },
+      xDPC: { position:'top', ticks:{color:C.green,font:{size:10},callback:v=>'$'+v}, grid:{color:'#1e2235'}, title:{display:true,text:'DPC ($)',color:C.green,font:{size:10}} },
+      xContacts: { position:'bottom', ticks:{color:C.blue,font:{size:10},callback:v=>v.toLocaleString()}, grid:{display:false}, title:{display:true,text:'Contacts',color:C.blue,font:{size:10}} }
+    }}
+  });
+
+  // Segment table
+  const allSegs = [...CD2.dpc_by_tier, ...CD2.dpc_by_range, ...CD2.dpc_by_type];
+  const tbody = document.getElementById('contacts-seg-table');
+  allSegs.forEach(d => {
+    const r = document.createElement('tr');
+    const dpcColor = d.dpc > 60 ? 'var(--positive)' : d.dpc > 30 ? 'var(--accent3)' : d.dpc === 0 ? 'var(--text3)' : 'var(--negative)';
+    r.innerHTML = `<td><strong>${d.segment}</strong></td><td class="num">${d.contacts.toLocaleString()}</td><td class="num">${d.profiles.toLocaleString()}</td><td class="num">${d.cpp.toFixed(1)}</td><td class="num">$${(d.revenue/1000).toFixed(0)}K</td><td class="num" style="color:${dpcColor};font-weight:700">${d.dpc>0?'$'+d.dpc.toFixed(2):'—'}</td>`;
+    tbody.appendChild(r);
+  });
+}
+
+buildKPIs();buildCharts();buildTables();renderCohorts();buildContactsKPIs();buildContactsCharts();
+
+function buildPricingPage() {
+  const vol_order = ['Solo (1)','Small (2)','Group (3–5)','Mid (6–10)',
+    'Large (11–25)','Regional (26–50)','Enterprise (51–200)','Strategic (201+)'];
+  const dem_order = ['High','Standard','Low'];
+  const dem_colors = {
+    'High':   {bg:'rgba(52,211,153,0.08)',  col:'#34d399'},
+    'Standard':{bg:'rgba(79,142,247,0.06)', col:'#4f8ef7'},
+    'Low':    {bg:'rgba(100,116,139,0.06)', col:'#94a3b8'}
+  };
+
+  // ── matrix table ──────────────────────────────────────────────────────────
+  const tbody = document.getElementById('pricing-matrix-tbody');
+  vol_order.forEach(vb => {
+    const row_cells = {};
+    let total_accts = 0, total_profs = 0;
+    dem_order.forEach(dem => {
+      const cell = PM.matrix.find(c => c.bracket===vb && c.demand===dem);
+      row_cells[dem] = cell;
+      if (cell) { total_accts += cell.accts; total_profs += cell.profiles; }
+    });
+
+    const tr = document.createElement('tr');
+    let uplift_total = 0;
+
+    // volume bracket cell
+    const tdVol = document.createElement('td');
+    tdVol.innerHTML = `<strong>${vb}</strong>`;
+    tr.appendChild(tdVol);
+
+    const tdA = document.createElement('td'); tdA.className='num'; tdA.textContent = total_accts; tr.appendChild(tdA);
+    const tdP = document.createElement('td'); tdP.className='num'; tdP.textContent = total_profs.toLocaleString(); tr.appendChild(tdP);
+
+    dem_order.forEach(dem => {
+      const td = document.createElement('td');
+      td.className = 'num';
+      td.style.background = dem_colors[dem].bg;
+      const cell = row_cells[dem];
+      if (!cell) { td.innerHTML = '<span style="color:var(--text3)">—</span>'; tr.appendChild(td); return; }
+
+      const isHold = cell.uplift < 0;
+      const arrow = isHold ? '=' : '↑';
+      const arrowColor = isHold ? 'var(--text3)' : 'var(--positive)';
+      const priceStyle = isHold ? 'color:var(--text3);font-style:italic' : `color:${dem_colors[dem].col};font-weight:700`;
+
+      td.innerHTML = `
+        <span style="${priceStyle}">$${cell.new_price}/prof</span><br>
+        <span style="font-size:10px;color:var(--text3)">${cell.accts} accts · ${cell.profiles} profs</span><br>
+        <span style="font-size:10px;color:var(--text3)">now $${cell.cur_arpc_p} </span>
+        <span style="font-size:10px;color:${arrowColor}">${arrow} ${isHold ? 'HOLD' : fmt(cell.uplift)}</span>`;
+
+      if (!isHold) uplift_total += cell.uplift;
+      tr.appendChild(td);
+    });
+
+    // uplift cell
+    const tdU = document.createElement('td'); tdU.className='num';
+    tdU.innerHTML = uplift_total > 0
+      ? `<span style="color:var(--positive);font-weight:700">+${fmt(uplift_total)}</span>`
+      : `<span style="color:var(--text3)">HOLD</span>`;
+    tr.appendChild(tdU);
+
+    tbody.appendChild(tr);
+  });
+
+  // ── totals row ────────────────────────────────────────────────────────────
+  const trTotal = document.createElement('tr');
+  trTotal.style.fontWeight = '700';
+  trTotal.style.borderTop = '2px solid var(--border)';
+  const posUplift = PM.matrix.filter(c=>c.uplift>0).reduce((s,c)=>s+c.uplift,0);
+  const totalAccts = PM.matrix.reduce((s,c)=>s+c.accts,0);
+  const totalProfs = PM.matrix.reduce((s,c)=>s+c.profiles,0);
+  trTotal.innerHTML = `
+    <td>TOTAL</td><td class="num">${totalAccts}</td><td class="num">${totalProfs.toLocaleString()}</td>
+    <td colspan="3" class="num" style="color:var(--text3)">28 accounts held at current rate (already above target)</td>
+    <td class="num" style="color:var(--positive)">+${fmt(posUplift)}/mo gross<br>
+    <span style="font-size:10px">+${fmt(posUplift*0.7)}/mo realistic</span></td>`;
+  tbody.appendChild(trTotal);
+
+  // ── AOP lists ─────────────────────────────────────────────────────────────
+  document.getElementById('aop-high-list').innerHTML =
+    PM.aop_high.map(a => {
+      const s = PM.aop_stats[a];
+      return `<span title="$${s?.arpc_p_6m}/prof · ${s?.cpp_6m} cpp">${a}</span>`;
+    }).join('<br>');
+  document.getElementById('aop-std-list').innerHTML =
+    PM.aop_standard.map(a => {
+      const s = PM.aop_stats[a];
+      return `<span title="$${s?.arpc_p_6m}/prof · ${s?.cpp_6m} cpp">${a}</span>`;
+    }).join('<br>');
+  document.getElementById('aop-low-list').innerHTML =
+    PM.aop_low.map(a => {
+      const s = PM.aop_stats[a];
+      return `<span title="$${s?.arpc_p_6m}/prof · ${s?.cpp_6m} cpp">${a}</span>`;
+    }).join('<br>');
+
+  // ── volume ladder chart ───────────────────────────────────────────────────
+  const bracketLabels = ['Solo (1)','Small (2)','Group (3-5)','Mid (6-10)','Large (11-25)','Regional (26-50)','Enterprise (51-200)','Strategic (201+)'];
+  const highPrices  = [240,220,205,165,145,120,95,65];
+  const stdPrices   = [199,185,169,139,119,99,79,55];
+  const lowPrices   = [160,150,135,110,95,80,65,45];
+
+  new Chart(document.getElementById('chart-pricing-ladder'), {
+    type: 'bar',
+    data: {
+      labels: bracketLabels,
+      datasets: [
+        { label: 'High Demand', data: highPrices,  backgroundColor: 'rgba(52,211,153,0.7)',  borderRadius: 4 },
+        { label: 'Standard',    data: stdPrices,   backgroundColor: 'rgba(79,142,247,0.7)',  borderRadius: 4 },
+        { label: 'Low Demand',  data: lowPrices,   backgroundColor: 'rgba(100,116,139,0.5)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      ...CD,
+      scales: {
+        x: { ...CD.scales.x, ticks: { color:'#64748b', font:{size:10} } },
+        y: { ...CD.scales.y, ticks: { color:'#64748b', font:{size:10}, callback: v=>'$'+v } }
+      }
+    }
+  });
+
+  // ── impact table ──────────────────────────────────────────────────────────
+  const impTbody = document.getElementById('impact-tbody');
+  const gainRows = PM.matrix.filter(c=>c.uplift>0).sort((a,b)=>b.uplift-a.uplift);
+  gainRows.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.bracket} · <span style="color:${c.demand==='High'?'#34d399':c.demand==='Standard'?'#4f8ef7':'#64748b'}">${c.demand} demand</span></td>
+      <td class="num">${c.accts}</td><td class="num">${c.profiles.toLocaleString()}</td>
+      <td class="num">${fmt(c.cur_rev)}</td>
+      <td class="num">${fmt(c.new_rev)}</td>
+      <td class="num" style="color:var(--positive);font-weight:700">+${fmt(c.uplift)}</td>
+      <td class="num" style="color:var(--positive)">+${fmt(c.uplift*0.7)}</td>`;
+    impTbody.appendChild(tr);
+  });
+
+  // totals row
+  const trT = document.createElement('tr');
+  trT.style.fontWeight = '700'; trT.style.borderTop = '2px solid var(--border)';
+  const totCur = gainRows.reduce((s,c)=>s+c.cur_rev,0);
+  const totNew = gainRows.reduce((s,c)=>s+c.new_rev,0);
+  const totUp  = gainRows.reduce((s,c)=>s+c.uplift,0);
+  trT.innerHTML = `<td>TOTAL (raise segments only)</td>
+    <td class="num">${gainRows.reduce((s,c)=>s+c.accts,0)}</td>
+    <td class="num">${gainRows.reduce((s,c)=>s+c.profiles,0).toLocaleString()}</td>
+    <td class="num">${fmt(totCur)}</td><td class="num">${fmt(totNew)}</td>
+    <td class="num" style="color:var(--positive)">+${fmt(totUp)}</td>
+    <td class="num" style="color:var(--positive)">+${fmt(totUp*0.7)}</td>`;
+  impTbody.appendChild(trT);
+}
+buildPricingPage();
+</script>
+</body>
+</html>
